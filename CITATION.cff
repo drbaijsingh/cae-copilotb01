@@ -1,0 +1,90 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata below."
+type: software
+title: "CAE Copilot: a validated toolkit for structural CAE and plate vibroacoustics"
+abstract: >-
+  An open, browser-based toolkit for structural computer-aided engineering and
+  the vibroacoustics of thin plates. Generates ready-to-run input decks for
+  ABAQUS, ANSYS, LS-DYNA and MATLAB across static, modal, buckling, harmonic,
+  explicit-impact and acoustic-radiation analyses, and provides closed-form
+  solutions for the same problems so that finite element results can be
+  independently cross-checked. Includes functionally graded plate analysis
+  referenced to the physical neutral surface, classical lamination theory with
+  full ABD assembly and coupling diagnostics, and shear-corrected sandwich
+  panel analysis. Natural frequencies are obtained from the exact Levy
+  transcendental solution where a simply supported edge pair exists, and from a
+  Rayleigh-Ritz formulation using characteristic beam functions otherwise.
+  Validated against Leissa (1969) across ten edge-condition cases with a
+  maximum error of 0.028 per cent.
+authors:
+  - family-names: Singh
+    given-names: Baij Nath
+    name-particle: Dr.
+    affiliation: "Bennett University, Greater Noida, Uttar Pradesh, India"
+    email: singhbaij03@gmail.com
+    # orcid: "https://orcid.org/0000-0000-0000-0000"   # <-- ADD YOURS
+version: 1.0.0
+date-released: 2026-08-31
+license: MIT
+repository-code: "https://github.com/YOUR-USERNAME/cae-copilotb01"
+url: "https://YOUR-USERNAME.github.io/cae-copilotb01/"
+keywords:
+  - finite element analysis
+  - structural dynamics
+  - vibroacoustics
+  - functionally graded materials
+  - composite laminates
+  - sandwich structures
+  - plate theory
+  - physical neutral surface
+  - Rayleigh-Ritz method
+  - Levy solution
+  - modal analysis
+  - NVH
+  - ABAQUS
+  - ANSYS
+  - LS-DYNA
+  - MATLAB
+references:
+  - type: article
+    authors:
+      - family-names: Singh
+        given-names: Baij Nath
+      - family-names: Ranjan
+        given-names: Vinayak
+      - family-names: Hota
+        given-names: R. N.
+    title: "Vibroacoustic response of mode localized thin functionally graded plates using physical neutral surface"
+    journal: "Composite Structures"
+    volume: 287
+    year: 2022
+    doi: 10.1016/j.compstruct.2022.115301
+  - type: article
+    authors:
+      - family-names: Singh
+        given-names: Baij Nath
+      - family-names: Ranjan
+        given-names: Vinayak
+      - family-names: Hota
+        given-names: R. N.
+    title: "Vibroacoustic Response of Thin Power Law Indexed Functionally Graded Plates"
+    journal: "Steel and Composite Structures"
+    volume: 50
+    year: 2024
+    doi: 10.12989/scs.2024.50.3.299
+  - type: article
+    authors:
+      - family-names: Warburton
+        given-names: G. B.
+    title: "The vibration of rectangular plates"
+    journal: "Proceedings of the Institution of Mechanical Engineers"
+    volume: 168
+    year: 1954
+  - type: book
+    authors:
+      - family-names: Leissa
+        given-names: Arthur W.
+    title: "Vibration of Plates"
+    publisher:
+      name: "NASA SP-160"
+    year: 1969

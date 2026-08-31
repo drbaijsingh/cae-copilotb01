@@ -1,0 +1,39 @@
+{
+  "upload_type": "software",
+  "access_right": "open",
+  "license": "MIT",
+  "title": "CAE Copilot: a validated toolkit for structural CAE and plate vibroacoustics",
+  "creators": [
+    {
+      "name": "Singh, Baij Nath",
+      "affiliation": "Bennett University, Greater Noida, Uttar Pradesh, India"
+    }
+  ],
+  "description": "<p>An open, browser-based toolkit for structural computer-aided engineering and the vibroacoustics of thin plates. It requires no installation, no network connection and no user account, and runs entirely client-side.</p><p><strong>Script generation.</strong> Produces ready-to-run input decks for ABAQUS (Python), ANSYS (APDL), LS-DYNA (keyword) and MATLAB across static, modal, buckling, harmonic, explicit-impact and acoustic-radiation analyses. Each generated script carries the corresponding analytical result in its header, so a finite element run can be checked against an independent solution immediately.</p><p><strong>Materials module.</strong> Functionally graded plates under power-law, sigmoid and exponential gradation with Voigt, Mori-Tanaka or Reuss homogenisation, referenced to the physical neutral surface so that bending-stretching coupling vanishes identically. Classical lamination theory with full ABD assembly and symmetry, balance and bend-twist diagnostics. Shear-corrected sandwich panel analysis with face yielding, core shear and face wrinkling margins. A parametric study module sweeps any of eleven design variables and exports results as CSV or LaTeX.</p><p><strong>Boundary conditions.</strong> Natural frequencies are obtained from the exact Levy transcendental solution wherever a simply supported edge pair exists, and from a Rayleigh-Ritz formulation using characteristic beam functions otherwise, covering arbitrary combinations of simply supported, clamped and free edges.</p><p><strong>Validation.</strong> Verified against Leissa (1969) across ten edge-condition cases with a maximum error of 0.028 per cent, and against classical closed-form results for laminated and homogeneous plates. The complete validation suite is distributed with the software and may be re-run independently.</p>",
+  "keywords": [
+    "finite element analysis",
+    "structural dynamics",
+    "vibroacoustics",
+    "functionally graded materials",
+    "composite laminates",
+    "sandwich structures",
+    "plate theory",
+    "physical neutral surface",
+    "Rayleigh-Ritz method",
+    "Levy solution",
+    "modal analysis",
+    "NVH",
+    "ABAQUS",
+    "ANSYS",
+    "LS-DYNA",
+    "MATLAB",
+    "computational mechanics",
+    "acoustic radiation"
+  ],
+  "related_identifiers": [
+    { "identifier": "10.1016/j.compstruct.2022.115301", "relation": "references", "scheme": "doi" },
+    { "identifier": "10.12989/scs.2024.50.3.299",       "relation": "references", "scheme": "doi" },
+    { "identifier": "10.1007/s00419-022-02163-9",       "relation": "references", "scheme": "doi" },
+    { "identifier": "10.3390/app12157707",              "relation": "references", "scheme": "doi" }
+  ]
+}
