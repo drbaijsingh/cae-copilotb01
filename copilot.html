@@ -1,0 +1,1994 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CAE Copilot</title>
+<meta name="description" content="Free browser tool for structural CAE: generates runnable ABAQUS, ANSYS, LS-DYNA and MATLAB scripts, diagnoses solver errors, and analyses functionally graded, laminated and sandwich plates.">
+<meta name="author" content="Dr. Baij Nath Singh">
+
+<style>
+:root{color-scheme:light dark}
+html,body{margin:0}
+body{font:14px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#fff}
+img{max-width:100%}
+[hidden]{display:none!important}
+.site-nav{font-family:system-ui,sans-serif;font-size:13px;display:flex;gap:14px;align-items:center;margin-left:18px;flex-shrink:0}
+.site-nav a{color:#0A6FB5;text-decoration:none;white-space:nowrap;border-bottom:1px solid transparent;padding-bottom:1px}
+.site-nav a:hover{border-bottom-color:currentColor}
+@media (prefers-color-scheme:dark){.site-nav a{color:#48A6E4}}
+</style>
+</head>
+<body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+
+<style>
+  :root {
+    --ground:#F2F5F7; --surface:#FFFFFF; --surface-2:#F7F9FB; --surface-3:#EDF1F4;
+    --ink:#0E1822; --ink-soft:#51606D; --ink-faint:#7B8998;
+    --rule:#D8E0E7; --rule-soft:#E8EDF1;
+    --accent:#0A6FB5; --accent-ink:#FFFFFF; --accent-soft:#E4F0F9;
+    --ok:#17794A; --ok-soft:#E2F3EA;
+    --warn:#9A5B00; --warn-soft:#FBEFDC;
+    --err:#B5342A; --err-soft:#FBE8E6;
+    --code-bg:#101A22; --code-ink:#DCE5EC; --code-comment:#6F8494;
+    --code-str:#8FD07A; --code-num:#F0B36B; --code-kw:#6FB8F0;
+    --shadow:0 1px 2px rgba(14,24,34,.06), 0 10px 26px -20px rgba(14,24,34,.4);
+    --ui:"Barlow","Helvetica Neue",Arial,sans-serif;
+    --cond:"Barlow Condensed","Barlow",sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --ground:#0A0F14; --surface:#121A21; --surface-2:#161F27; --surface-3:#1C262F;
+      --ink:#E3EAF0; --ink-soft:#94A4B3; --ink-faint:#71828F;
+      --rule:#25313B; --rule-soft:#1D262E;
+      --accent:#48A6E4; --accent-ink:#06202F; --accent-soft:#12293A;
+      --ok:#4FBF88; --ok-soft:#10271D;
+      --warn:#E0A353; --warn-soft:#2A2013;
+      --err:#EE7B70; --err-soft:#2E1917;
+      --code-bg:#0A1218; --code-ink:#D3DDE5;
+      --shadow:0 1px 2px rgba(0,0,0,.5), 0 12px 30px -22px rgba(0,0,0,1);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0A0F14; --surface:#121A21; --surface-2:#161F27; --surface-3:#1C262F;
+    --ink:#E3EAF0; --ink-soft:#94A4B3; --ink-faint:#71828F;
+    --rule:#25313B; --rule-soft:#1D262E;
+    --accent:#48A6E4; --accent-ink:#06202F; --accent-soft:#12293A;
+    --ok:#4FBF88; --ok-soft:#10271D;
+    --warn:#E0A353; --warn-soft:#2A2013;
+    --err:#EE7B70; --err-soft:#2E1917;
+    --code-bg:#0A1218; --code-ink:#D3DDE5;
+    --shadow:0 1px 2px rgba(0,0,0,.5), 0 12px 30px -22px rgba(0,0,0,1);
+  }
+
+  *{box-sizing:border-box;}
+  body{background:var(--ground);color:var(--ink);font-family:var(--ui);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;}
+  h1,h2,h3,h4{margin:0;}
+  button{font-family:inherit;}
+
+  /* ---------- brand bar ---------- */
+  .topbar{
+    position:sticky;top:0;z-index:40;background:var(--surface);
+    border-bottom:1px solid var(--rule);
+  }
+  .topbar-inner{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;align-items:center;gap:22px;height:58px;}
+  .brand{display:flex;align-items:center;gap:11px;flex-shrink:0;}
+  .spectrum{width:26px;height:26px;border-radius:5px;flex-shrink:0;
+    background:linear-gradient(150deg,#2B3E9E 0%,#0F86C8 26%,#25B08A 48%,#D6C43F 70%,#D9702F 86%,#B32A22 100%);}
+  .brand-name{font-family:var(--cond);font-weight:700;font-size:22px;letter-spacing:.005em;line-height:1;}
+  .brand-name span{color:var(--accent);}
+  .brand-tag{font-family:var(--mono);font-size:10px;color:var(--ink-faint);letter-spacing:.06em;text-transform:uppercase;margin-top:2px;}
+
+  .tabs{display:flex;gap:2px;margin-left:auto;overflow-x:auto;}
+  .tab{
+    background:none;border:0;cursor:pointer;padding:9px 14px;border-radius:6px;
+    font-family:var(--cond);font-weight:600;font-size:16px;letter-spacing:.01em;
+    color:var(--ink-soft);white-space:nowrap;transition:background .12s,color .12s;
+  }
+  .tab:hover{background:var(--surface-3);color:var(--ink);}
+  .tab[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);}
+  .tab:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+
+  .shell{max-width:1280px;margin:0 auto;padding:24px 20px 80px;}
+  .panel[hidden]{display:none !important;}
+
+  /* ---------- generic bits ---------- */
+  .lede{color:var(--ink-soft);max-width:76ch;margin:0 0 22px;font-size:15.5px;}
+  .lede strong{color:var(--ink);font-weight:600;}
+
+  .label{
+    font-family:var(--mono);font-size:9.5px;font-weight:500;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--ink-faint);display:block;margin-bottom:7px;
+  }
+
+  .card{background:var(--surface);border:1px solid var(--rule);border-radius:8px;box-shadow:var(--shadow);}
+
+  /* ---------- builder layout ---------- */
+  .builder{display:grid;grid-template-columns:minmax(320px,400px) 1fr;gap:20px;align-items:start;}
+  .form-col{display:flex;flex-direction:column;gap:14px;}
+
+  .fieldset{padding:16px 18px 18px;}
+  .fieldset + .fieldset{margin-top:0;}
+  .fs-title{font-family:var(--cond);font-weight:700;font-size:15px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+  .fs-title::after{content:"";flex:1;height:1px;background:var(--rule-soft);}
+
+  .seg{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;}
+  .seg-4{grid-template-columns:repeat(2,1fr);}
+  .segbtn{
+    border:1px solid var(--rule);background:var(--surface-2);color:var(--ink-soft);
+    border-radius:6px;padding:9px 8px;cursor:pointer;font-size:13px;font-weight:500;
+    text-align:center;transition:all .12s;line-height:1.25;
+  }
+  .segbtn:hover:not(:disabled){border-color:var(--accent);color:var(--ink);}
+  .segbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600;}
+  .segbtn:disabled{opacity:.34;cursor:not-allowed;}
+  .segbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .segbtn small{display:block;font-family:var(--mono);font-size:9px;letter-spacing:.05em;opacity:.72;margin-top:2px;text-transform:uppercase;}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;}
+  .field{display:flex;flex-direction:column;min-width:0;}
+  input[type="number"],input[type="text"],select,textarea{
+    width:100%;background:var(--surface-2);border:1px solid var(--rule);border-radius:5px;
+    padding:8px 10px;color:var(--ink);font-family:var(--mono);font-size:13px;
+  }
+  select{font-family:var(--ui);font-size:13.5px;}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:var(--accent);}
+  textarea{resize:vertical;line-height:1.5;}
+
+  .hint{font-size:12px;color:var(--ink-faint);margin-top:8px;line-height:1.45;}
+
+  /* ---------- code pane ---------- */
+  .code-col{position:sticky;top:82px;display:flex;flex-direction:column;gap:12px;}
+  .code-card{background:var(--code-bg);border:1px solid var(--rule);border-radius:8px;overflow:hidden;box-shadow:var(--shadow);}
+  .code-head{
+    display:flex;align-items:center;gap:10px;padding:11px 14px;
+    background:rgba(255,255,255,.035);border-bottom:1px solid rgba(255,255,255,.09);
+  }
+  .code-file{font-family:var(--mono);font-size:12px;color:#9FB3C2;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .cbtn{
+    background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.14);color:#DDE7EE;
+    border-radius:5px;padding:5px 11px;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;transition:background .12s;
+  }
+  .cbtn:hover{background:rgba(255,255,255,.17);}
+  .cbtn:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+  .cbtn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600;}
+  pre.code{
+    margin:0;padding:16px 18px;overflow:auto;max-height:calc(100vh - 220px);
+    font-family:var(--mono);font-size:12.2px;line-height:1.65;color:var(--code-ink);
+    tab-size:4;white-space:pre;
+  }
+  .tk-c{color:var(--code-comment);font-style:italic;}
+  .tk-s{color:var(--code-str);}
+  .tk-n{color:var(--code-num);}
+  .tk-k{color:var(--code-kw);}
+
+  .runline{
+    font-family:var(--mono);font-size:11.5px;color:var(--ink-soft);
+    background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:10px 13px;
+    display:flex;gap:9px;align-items:flex-start;overflow-x:auto;
+  }
+  .runline b{color:var(--accent);font-weight:600;flex-shrink:0;}
+
+  /* ---------- notices ---------- */
+  .notice{border-radius:7px;padding:13px 15px;font-size:13.5px;line-height:1.5;border:1px solid;}
+  .notice-warn{background:var(--warn-soft);border-color:var(--warn);color:var(--ink);}
+  .notice-info{background:var(--accent-soft);border-color:var(--accent);color:var(--ink);}
+  .notice b{font-weight:600;}
+
+  /* ---------- error doctor ---------- */
+  .doctor{display:grid;grid-template-columns:minmax(300px,420px) 1fr;gap:20px;align-items:start;}
+  .diag-list{display:flex;flex-direction:column;gap:14px;}
+  .diag{border-left:4px solid var(--rule);padding:18px 20px;}
+  .diag.sev-high{border-left-color:var(--err);}
+  .diag.sev-med{border-left-color:var(--warn);}
+  .diag.sev-low{border-left-color:var(--ok);}
+  .diag-head{display:flex;align-items:flex-start;gap:11px;flex-wrap:wrap;margin-bottom:9px;}
+  .diag-title{font-family:var(--cond);font-weight:700;font-size:19px;line-height:1.2;flex:1;min-width:200px;}
+  .pill{
+    font-family:var(--mono);font-size:9.5px;font-weight:500;letter-spacing:.09em;text-transform:uppercase;
+    padding:3px 8px;border-radius:3px;white-space:nowrap;
+  }
+  .pill-solver{background:var(--surface-3);color:var(--ink-soft);}
+  .pill-high{background:var(--err-soft);color:var(--err);}
+  .pill-med{background:var(--warn-soft);color:var(--warn);}
+  .pill-low{background:var(--ok-soft);color:var(--ok);}
+  .diag-cause{color:var(--ink-soft);font-size:14.5px;margin:0 0 14px;max-width:74ch;}
+  .fixes{list-style:none;padding:0;margin:0;counter-reset:fix;display:flex;flex-direction:column;gap:9px;}
+  .fixes li{
+    counter-increment:fix;display:grid;grid-template-columns:22px 1fr;gap:11px;
+    font-size:14px;line-height:1.5;align-items:baseline;
+  }
+  .fixes li::before{
+    content:counter(fix);font-family:var(--mono);font-size:10.5px;font-weight:600;color:var(--accent);
+    background:var(--accent-soft);border-radius:3px;text-align:center;padding:2px 0;
+  }
+  .fixes code, .diag-cause code, .adv-body code{
+    font-family:var(--mono);font-size:12.2px;background:var(--surface-3);
+    padding:1.5px 5px;border-radius:3px;color:var(--ink);
+  }
+  .empty{
+    text-align:center;padding:52px 24px;color:var(--ink-faint);
+    border:1px dashed var(--rule);border-radius:8px;background:var(--surface-2);
+  }
+  .empty h3{font-family:var(--cond);font-size:19px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;}
+  .empty p{margin:0;font-size:14px;max-width:46ch;margin-inline:auto;}
+
+  .samples{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+  .sample{
+    background:var(--surface-3);border:1px solid var(--rule);color:var(--ink-soft);
+    border-radius:20px;padding:5px 12px;font-size:12px;cursor:pointer;transition:all .12s;
+  }
+  .sample:hover{border-color:var(--accent);color:var(--accent);}
+
+  /* ---------- advisor ---------- */
+  .adv-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px;margin-bottom:24px;}
+  .advcard{
+    text-align:left;background:var(--surface);border:1px solid var(--rule);border-radius:8px;
+    padding:16px 17px;cursor:pointer;transition:all .13s;box-shadow:var(--shadow);
+  }
+  .advcard:hover{border-color:var(--accent);transform:translateY(-1px);}
+  .advcard[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);}
+  .advcard:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .advcard h4{font-family:var(--cond);font-size:17px;font-weight:700;margin-bottom:5px;}
+  .advcard p{margin:0;font-size:13px;color:var(--ink-soft);line-height:1.45;}
+
+  .adv-body{padding:22px 24px;}
+  .adv-body h3{font-family:var(--cond);font-size:23px;font-weight:700;margin-bottom:16px;}
+  .rec{display:grid;grid-template-columns:150px 1fr;gap:14px;padding:12px 0;border-bottom:1px solid var(--rule-soft);align-items:baseline;}
+  .rec:last-of-type{border-bottom:0;}
+  .rec-k{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);}
+  .rec-v{font-size:14.5px;line-height:1.55;}
+  .pitfalls{margin-top:18px;padding-top:16px;border-top:1px solid var(--rule);}
+  .pitfalls .label{margin-bottom:10px;color:var(--warn);}
+  .pitfalls ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:7px;}
+  .pitfalls li{font-size:14px;line-height:1.5;color:var(--ink-soft);}
+
+  /* ---------- materials ---------- */
+  .table-wrap{overflow-x:auto;border:1px solid var(--rule);border-radius:8px;background:var(--surface);box-shadow:var(--shadow);}
+  table{border-collapse:collapse;width:100%;min-width:660px;font-variant-numeric:tabular-nums;}
+  th{
+    font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    text-align:left;color:var(--ink-faint);padding:12px 15px;background:var(--surface-2);
+    border-bottom:1px solid var(--rule);white-space:nowrap;
+  }
+  td{padding:11px 15px;border-bottom:1px solid var(--rule-soft);font-size:13.5px;}
+  tbody tr:last-child td{border-bottom:0;}
+  td.mono{font-family:var(--mono);font-size:12.5px;white-space:nowrap;}
+  td.nm{font-weight:600;white-space:nowrap;}
+
+  .foot{margin-top:44px;padding-top:20px;border-top:1px solid var(--rule);font-size:12.5px;color:var(--ink-faint);line-height:1.6;max-width:80ch;}
+
+  @media (max-width:960px){
+    .builder,.doctor{grid-template-columns:1fr;}
+    .code-col{position:static;}
+    pre.code{max-height:460px;}
+  }
+  @media (max-width:640px){
+    .topbar-inner{height:auto;flex-wrap:wrap;padding:10px 14px;gap:10px;}
+    .tabs{margin-left:0;width:100%;}
+    .shell{padding:18px 14px 60px;}
+    .grid3{grid-template-columns:1fr 1fr;}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none !important;}}
+</style>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="spectrum" aria-hidden="true"></div>
+      <div>
+        <div class="brand-name">CAE <span>Copilot</span></div>
+        <div class="brand-tag">Simulation assistant</div>
+      </div>
+    </div>
+    <div class="site-nav"><a href="index.html">← Home</a><a href="materials.html">Materials module</a></div>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" data-panel="p-build">Script Builder</button>
+      <button class="tab" role="tab" aria-selected="false" data-panel="p-doctor">Error Doctor</button>
+      <button class="tab" role="tab" aria-selected="false" data-panel="p-advise">Setup Advisor</button>
+      <button class="tab" role="tab" aria-selected="false" data-panel="p-mat">Materials</button>
+    </div>
+  </div>
+</div>
+
+<div class="shell">
+
+  <!-- ================= SCRIPT BUILDER ================= -->
+  <section class="panel" id="p-build" role="tabpanel">
+    <p class="lede">Describe the plate problem once and get a <strong>runnable script</strong> for your solver. Every script is generated from templates, not guessed — the physics and the syntax are fixed, only your parameters change. Pair the FE script with the MATLAB analytical solution to <strong>validate your model before you trust it</strong>.</p>
+
+    <div class="builder">
+      <div class="form-col">
+
+        <div class="card fieldset">
+          <div class="fs-title">Solver</div>
+          <div class="seg seg-4" id="solverSeg"></div>
+        </div>
+
+        <div class="card fieldset">
+          <div class="fs-title">Analysis</div>
+          <div class="seg" id="analysisSeg"></div>
+          <p class="hint" id="analysisHint"></p>
+        </div>
+
+        <div class="card fieldset">
+          <div class="fs-title">Geometry</div>
+          <div class="grid3">
+            <div class="field"><label class="label" for="inL">Length a (m)</label><input type="number" id="inL" value="1.0" step="0.05" min="0.001"></div>
+            <div class="field"><label class="label" for="inW">Width b (m)</label><input type="number" id="inW" value="0.8" step="0.05" min="0.001"></div>
+            <div class="field"><label class="label" for="inH">Thick h (m)</label><input type="number" id="inH" value="0.005" step="0.001" min="0.0001"></div>
+          </div>
+          <p class="hint" id="thinHint"></p>
+        </div>
+
+        <div class="card fieldset">
+          <div class="fs-title">Material</div>
+          <div class="field" style="margin-bottom:11px;">
+            <label class="label" for="matSel">Preset</label>
+            <select id="matSel"></select>
+          </div>
+          <div class="grid3">
+            <div class="field"><label class="label" for="inE">E (GPa)</label><input type="number" id="inE" value="210" step="1" min="0.001"></div>
+            <div class="field"><label class="label" for="inNu">Poisson v</label><input type="number" id="inNu" value="0.3" step="0.01" min="0" max="0.499"></div>
+            <div class="field"><label class="label" for="inRho">rho (kg/m3)</label><input type="number" id="inRho" value="7850" step="10" min="1"></div>
+          </div>
+        </div>
+
+        <div class="card fieldset">
+          <div class="fs-title">Boundary conditions</div>
+          <div class="seg" id="bcSeg"></div>
+        </div>
+
+        <div class="card fieldset">
+          <div class="fs-title">Mesh &amp; solution</div>
+          <div class="grid2">
+            <div class="field"><label class="label" for="inSeed">Element size (m)</label><input type="number" id="inSeed" value="0.02" step="0.005" min="0.0005"></div>
+            <div class="field" id="wrapModes"><label class="label" for="inModes">No. of modes</label><input type="number" id="inModes" value="10" step="1" min="1" max="200"></div>
+            <div class="field" id="wrapPress"><label class="label" for="inPress">Pressure (Pa)</label><input type="number" id="inPress" value="1000" step="100"></div>
+            <div class="field" id="wrapForce"><label class="label" for="inForce">Point force (N)</label><input type="number" id="inForce" value="1" step="0.5"></div>
+            <div class="field" id="wrapF1"><label class="label" for="inF1">f start (Hz)</label><input type="number" id="inF1" value="10" step="10" min="0"></div>
+            <div class="field" id="wrapF2"><label class="label" for="inF2">f end (Hz)</label><input type="number" id="inF2" value="1000" step="10" min="1"></div>
+            <div class="field" id="wrapVel"><label class="label" for="inVel">Impact vel (m/s)</label><input type="number" id="inVel" value="50" step="5"></div>
+            <div class="field" id="wrapTime"><label class="label" for="inTime">Duration (s)</label><input type="number" id="inTime" value="0.005" step="0.001" min="0.00001"></div>
+            <div class="field" id="wrapDamp"><label class="label" for="inDamp">Damping ratio</label><input type="number" id="inDamp" value="0.01" step="0.005" min="0" max="1"></div>
+          </div>
+          <p class="hint" id="meshHint"></p>
+        </div>
+
+      </div>
+
+      <div class="code-col">
+        <div class="code-card">
+          <div class="code-head">
+            <span class="code-file" id="fileName">script.py</span>
+            <button class="cbtn primary" id="btnCopy">Copy</button>
+            <button class="cbtn" id="btnSave" hidden>Save .txt</button>
+          </div>
+          <pre class="code"><code id="codeOut"></code></pre>
+        </div>
+        <div class="runline"><b>Run</b><span id="runCmd"></span></div>
+        <div class="notice notice-warn"><b>Verify before you trust it.</b> These templates encode standard practice, but no generator knows your problem. Check units, mesh convergence and boundary conditions against a case you already know the answer to.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= ERROR DOCTOR ================= -->
+  <section class="panel" id="p-doctor" role="tabpanel" hidden>
+    <p class="lede">Paste a solver message from a <code>.msg</code>, <code>.dat</code>, <code>.log</code> or <code>d3hsp</code> file. Matches are ranked by how specifically they fit what you pasted — <strong>no guessing, no invented causes</strong>.</p>
+    <div class="doctor">
+      <div>
+        <div class="card fieldset">
+          <div class="fs-title">Solver output</div>
+          <textarea id="errIn" rows="13" placeholder="Paste the error or warning text here..."></textarea>
+          <div class="samples" id="samples"></div>
+        </div>
+      </div>
+      <div id="diagOut"></div>
+    </div>
+  </section>
+
+  <!-- ================= SETUP ADVISOR ================= -->
+  <section class="panel" id="p-advise" role="tabpanel" hidden>
+    <p class="lede">Pick what you are actually trying to find out. The advisor recommends the analysis type, element choice, mesh strategy and solver settings — plus the mistakes that most often invalidate that class of analysis.</p>
+    <div class="adv-grid" id="advGrid"></div>
+    <div id="advOut"></div>
+  </section>
+
+  <!-- ================= MATERIALS ================= -->
+  <section class="panel" id="p-mat" role="tabpanel" hidden>
+    <p class="lede">Room-temperature reference values in consistent SI units (m, kg, s, Pa). Handbook figures for early-stage modelling — <strong>use your own certified data for anything that gets signed off</strong>.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Material</th><th>E (GPa)</th><th>Poisson</th><th>Density (kg/m³)</th><th>Yield (MPa)</th><th>Class</th></tr></thead>
+        <tbody id="matBody"></tbody>
+      </table>
+    </div>
+    <div class="foot">
+      <strong>Unit discipline.</strong> Neither ABAQUS nor LS-DYNA carries units — you do. Every script here is written in strict SI: metres, kilograms, seconds, so stress comes out in Pa and frequency in Hz. If you switch to millimetres you must switch mass to tonnes and density to t/mm³ (steel becomes 7.85e-9), or every natural frequency you compute will be wrong by a factor of about 31.6 and look plausible.
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* =========================================================
+   MATERIAL LIBRARY
+   ========================================================= */
+var MATERIALS = [
+  {id:"steel",   name:"Structural steel",     E:210,  nu:0.30, rho:7850, sy:250,  cls:"Metal"},
+  {id:"ss304",   name:"Stainless steel 304",  E:193,  nu:0.29, rho:8000, sy:215,  cls:"Metal"},
+  {id:"al6061",  name:"Aluminium 6061-T6",    E:68.9, nu:0.33, rho:2700, sy:276,  cls:"Metal"},
+  {id:"al7075",  name:"Aluminium 7075-T6",    E:71.7, nu:0.33, rho:2810, sy:503,  cls:"Metal"},
+  {id:"ti64",    name:"Titanium Ti-6Al-4V",   E:113.8,nu:0.342,rho:4430, sy:880,  cls:"Metal"},
+  {id:"mg az31", name:"Magnesium AZ31B",      E:45,   nu:0.35, rho:1770, sy:200,  cls:"Metal"},
+  {id:"cu",      name:"Copper (annealed)",    E:117,  nu:0.34, rho:8960, sy:70,   cls:"Metal"},
+  {id:"castiron",name:"Grey cast iron",       E:110,  nu:0.28, rho:7200, sy:150,  cls:"Metal"},
+  {id:"inconel", name:"Inconel 718",          E:200,  nu:0.29, rho:8190, sy:1030, cls:"Superalloy"},
+  {id:"sic",     name:"Silicon carbide SiC",  E:410,  nu:0.14, rho:3210, sy:null, cls:"Ceramic"},
+  {id:"zro2",    name:"Zirconia ZrO2",        E:200,  nu:0.31, rho:5700, sy:null, cls:"Ceramic"},
+  {id:"al2o3",   name:"Alumina Al2O3",        E:370,  nu:0.22, rho:3950, sy:null, cls:"Ceramic"},
+  {id:"cfrp",    name:"CFRP laminate (quasi-iso)", E:70, nu:0.31, rho:1600, sy:null, cls:"Composite"},
+  {id:"gfrp",    name:"GFRP laminate (quasi-iso)", E:25, nu:0.28, rho:1900, sy:null, cls:"Composite"},
+  {id:"pmma",    name:"PMMA (acrylic)",       E:3.1,  nu:0.37, rho:1180, sy:70,   cls:"Polymer"},
+  {id:"abs",     name:"ABS",                  E:2.3,  nu:0.35, rho:1040, sy:45,   cls:"Polymer"},
+  {id:"concrete",name:"Concrete (C30)",       E:30,   nu:0.20, rho:2400, sy:null, cls:"Civil"},
+  {id:"glass",   name:"Soda-lime glass",      E:70,   nu:0.23, rho:2500, sy:null, cls:"Brittle"}
+];
+
+/* =========================================================
+   SOLVER / ANALYSIS DEFINITIONS
+   ========================================================= */
+var SOLVERS = [
+  {id:"abaqus", name:"ABAQUS",   sub:"Python", file:"plate_%A%.py",  lang:"py"},
+  {id:"ansys",  name:"ANSYS",    sub:"APDL",   file:"plate_%A%.mac",  lang:"apdl"},
+  {id:"lsdyna", name:"LS-DYNA",  sub:"Keyword",file:"plate_%A%.k",    lang:"dyna"},
+  {id:"matlab", name:"MATLAB",   sub:"Script", file:"plate_%A%.m",    lang:"m"}
+];
+
+var ANALYSES = [
+  {id:"static",  name:"Static",       sub:"Linear",     solvers:["abaqus","ansys"]},
+  {id:"modal",   name:"Modal",        sub:"Frequency",  solvers:["abaqus","ansys","matlab"]},
+  {id:"buckling",name:"Buckling",     sub:"Eigenvalue", solvers:["abaqus","ansys"]},
+  {id:"harmonic",name:"Harmonic",     sub:"Steady-state",solvers:["ansys","matlab"]},
+  {id:"explicit",name:"Impact",       sub:"Explicit",   solvers:["abaqus","lsdyna"]},
+  {id:"vibac",   name:"Vibroacoustic",sub:"Radiation",  solvers:["matlab"]}
+];
+
+var BCS = [
+  {id:"ssss", name:"All edges simply supported", sub:"SSSS"},
+  {id:"cccc", name:"All edges clamped",          sub:"CCCC"},
+  {id:"cfff", name:"Cantilever (x=0 clamped)",   sub:"CFFF"},
+  {id:"sfsf", name:"Two opposite edges SS",      sub:"SFSF"}
+];
+
+var ANALYSIS_HINT = {
+  static:  "Linear static response to a uniform pressure. Small displacement, small strain — check that peak deflection stays under about half the thickness or you need a geometrically nonlinear step.",
+  modal:   "Undamped natural frequencies and mode shapes. Needs density; needs no load. The cheapest sanity check you can run on any new model.",
+  buckling:"Linear eigenvalue buckling under in-plane edge compression. Gives an upper bound — real structures buckle lower because of imperfections.",
+  harmonic:"Steady-state response over a frequency band using mode superposition. Damping matters more than mesh here.",
+  explicit:"Short-duration impact using an explicit central-difference solver. Cost scales with the smallest element, not the model size.",
+  vibac:   "Natural frequencies, forced velocity response and far-field radiated sound power for a baffled plate. The elemental radiator model."
+};
+
+/* =========================================================
+   STATE
+   ========================================================= */
+var S = {
+  solver:"abaqus", analysis:"modal", bc:"ssss",
+  L:1.0, W:0.8, h:0.005,
+  E:210, nu:0.30, rho:7850,
+  seed:0.02, modes:10, press:1000, force:1,
+  f1:10, f2:1000, vel:50, time:0.005, damp:0.01
+};
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function n(v,d){ // format number for code output
+  if(v===0) return "0.0";
+  var a=Math.abs(v);
+  if(a>=1e5||a<1e-3) return v.toExponential(d===undefined?4:d);
+  return String(parseFloat(v.toFixed(d===undefined?6:d)));
+}
+function el(id){return document.getElementById(id);}
+
+function supported(solver,analysis){
+  var a=ANALYSES.filter(function(x){return x.id===analysis;})[0];
+  return a && a.solvers.indexOf(solver)>=0;
+}
+
+/* =========================================================
+   SCRIPT GENERATORS — ABAQUS (Python)
+   ========================================================= */
+function abaqusBC(bc){
+  var t=[];
+  t.push("# ---- Boundary conditions ---------------------------------------");
+  t.push("tol = 1.0e-6");
+  t.push("eX0 = inst.edges.getByBoundingBox(-tol,-tol,-tol, tol, W+tol, tol)");
+  t.push("eXL = inst.edges.getByBoundingBox(L-tol,-tol,-tol, L+tol, W+tol, tol)");
+  t.push("eY0 = inst.edges.getByBoundingBox(-tol,-tol,-tol, L+tol, tol, tol)");
+  t.push("eYW = inst.edges.getByBoundingBox(-tol,W-tol,-tol, L+tol, W+tol, tol)");
+  t.push("");
+  if(bc==="ssss"){
+    t.push("a.Set(edges=eX0+eXL+eY0+eYW, name='EdgesAll')");
+    t.push("# Simply supported: translations restrained, rotations free");
+    t.push("m.DisplacementBC(name='SSSS', createStepName='Initial',");
+    t.push("                 region=a.sets['EdgesAll'],");
+    t.push("                 u1=0.0, u2=0.0, u3=0.0)");
+  }else if(bc==="cccc"){
+    t.push("a.Set(edges=eX0+eXL+eY0+eYW, name='EdgesAll')");
+    t.push("# Clamped: all six degrees of freedom restrained");
+    t.push("m.DisplacementBC(name='CCCC', createStepName='Initial',");
+    t.push("                 region=a.sets['EdgesAll'],");
+    t.push("                 u1=0.0, u2=0.0, u3=0.0, ur1=0.0, ur2=0.0, ur3=0.0)");
+  }else if(bc==="cfff"){
+    t.push("a.Set(edges=eX0, name='EdgeFixed')");
+    t.push("# Cantilever: x = 0 fully clamped, three edges free");
+    t.push("m.DisplacementBC(name='Clamp', createStepName='Initial',");
+    t.push("                 region=a.sets['EdgeFixed'],");
+    t.push("                 u1=0.0, u2=0.0, u3=0.0, ur1=0.0, ur2=0.0, ur3=0.0)");
+  }else{
+    t.push("a.Set(edges=eX0+eXL, name='EdgesSS')");
+    t.push("# Two opposite edges simply supported, y-edges free");
+    t.push("m.DisplacementBC(name='SFSF', createStepName='Initial',");
+    t.push("                 region=a.sets['EdgesSS'],");
+    t.push("                 u1=0.0, u2=0.0, u3=0.0)");
+  }
+  return t.join("\n");
+}
+
+function genAbaqus(){
+  var A=S.analysis, isExp=(A==="explicit");
+  var lib=isExp?"EXPLICIT":"STANDARD";
+  var jobName="Plate"+A.charAt(0).toUpperCase()+A.slice(1);
+  var L=[];
+  L.push("# -*- coding: utf-8 -*-");
+  L.push("# " + jobName + " -- generated by CAE Copilot");
+  L.push("# Run headless:  abaqus cae noGUI=" + fileNameFor() + "");
+  L.push("# Units: SI (m, kg, s, Pa, N)");
+  L.push("");
+  L.push("from abaqus import *");
+  L.push("from abaqusConstants import *");
+  L.push("from caeModules import *");
+  L.push("import mesh");
+  L.push("");
+  L.push("# ---- Parameters -------------------------------------------------");
+  L.push("L    = " + n(S.L) + "        # plate length, x (m)");
+  L.push("W    = " + n(S.W) + "        # plate width,  y (m)");
+  L.push("TH   = " + n(S.h) + "        # thickness (m)");
+  L.push("E    = " + n(S.E*1e9) + "    # Young's modulus (Pa)");
+  L.push("NU   = " + n(S.nu) + "       # Poisson's ratio");
+  L.push("RHO  = " + n(S.rho) + "      # density (kg/m^3)");
+  L.push("SEED = " + n(S.seed) + "     # global element size (m)");
+  if(A==="modal"||A==="buckling") L.push("NMODES = " + S.modes + "     # eigenmodes to extract");
+  if(A==="static") L.push("PRESS = " + n(S.press) + "   # uniform pressure (Pa)");
+  if(isExp){
+    L.push("VEL   = " + n(S.vel) + "     # impact velocity (m/s)");
+    L.push("TEND  = " + n(S.time) + "    # step duration (s)");
+  }
+  if(A==="buckling") L.push("EDGE_LOAD = " + n(S.press) + "  # in-plane edge pressure (Pa)");
+  L.push("");
+  L.push("Mdb()");
+  L.push("mdb.models.changeKey(fromName='Model-1', toName='" + jobName + "')");
+  L.push("m = mdb.models['" + jobName + "']");
+  L.push("");
+  L.push("# ---- Geometry: planar shell in the XY plane ---------------------");
+  L.push("s = m.ConstrainedSketch(name='sk', sheetSize=2.0*max(L, W))");
+  L.push("s.rectangle(point1=(0.0, 0.0), point2=(L, W))");
+  L.push("p = m.Part(name='Plate', dimensionality=THREE_D, type=DEFORMABLE_BODY)");
+  L.push("p.BaseShell(sketch=s)");
+  L.push("del m.sketches['sk']");
+  L.push("");
+  L.push("# ---- Material and shell section ---------------------------------");
+  L.push("mat = m.Material(name='PlateMat')");
+  L.push("mat.Elastic(table=((E, NU), ))");
+  L.push("mat.Density(table=((RHO, ), ))");
+  L.push("m.HomogeneousShellSection(name='ShellSec', material='PlateMat',");
+  L.push("                          thicknessType=UNIFORM, thickness=TH,");
+  L.push("                          integrationRule=SIMPSON, numIntPts=5)");
+  L.push("p.SectionAssignment(region=Region(faces=p.faces), sectionName='ShellSec')");
+  L.push("");
+  L.push("# ---- Mesh -------------------------------------------------------");
+  L.push("p.seedPart(size=SEED, deviationFactor=0.1, minSizeFactor=0.1)");
+  L.push("p.setElementType(regions=(p.faces, ),");
+  L.push("                 elemTypes=(mesh.ElemType(elemCode=S4R, elemLibrary=" + lib + "), ))");
+  L.push("p.generateMesh()");
+  L.push("");
+  L.push("# ---- Assembly ---------------------------------------------------");
+  L.push("a = m.rootAssembly");
+  L.push("a.DatumCsysByDefault(CARTESIAN)");
+  L.push("inst = a.Instance(name='Plate-1', part=p, dependent=ON)");
+  L.push("");
+  L.push("# ---- Step -------------------------------------------------------");
+  if(A==="static"){
+    L.push("m.StaticStep(name='Load', previous='Initial',");
+    L.push("             initialInc=0.1, minInc=1e-05, maxInc=1.0, nlgeom=OFF)");
+  }else if(A==="modal"){
+    L.push("m.FrequencyStep(name='Modal', previous='Initial',");
+    L.push("                eigensolver=LANCZOS, numEigen=NMODES,");
+    L.push("                normalization=MASS)");
+  }else if(A==="buckling"){
+    L.push("m.BuckleStep(name='Buckle', previous='Initial',");
+    L.push("             numEigen=NMODES, vectors=max(2*NMODES, NMODES+8),");
+    L.push("             maxIterations=300)");
+  }else if(isExp){
+    L.push("m.ExplicitDynamicsStep(name='Impact', previous='Initial', timePeriod=TEND)");
+  }
+  L.push("");
+  L.push(abaqusBC(S.bc));
+  L.push("");
+  L.push("# ---- Loading ----------------------------------------------------");
+  if(A==="static"){
+    L.push("a.Surface(side1Faces=inst.faces, name='TopFace')");
+    L.push("m.Pressure(name='UniformPressure', createStepName='Load',");
+    L.push("           region=a.surfaces['TopFace'], magnitude=PRESS)");
+  }else if(A==="buckling"){
+    L.push("# Unit-referenced edge compression: eigenvalue x EDGE_LOAD = critical load");
+    L.push("a.Surface(end1Edges=eXL, name='LoadedEdge')");
+    L.push("m.ShellEdgeLoad(name='EdgeCompression', createStepName='Buckle',");
+    L.push("                region=a.surfaces['LoadedEdge'], magnitude=EDGE_LOAD)");
+  }else if(isExp){
+    L.push("a.Set(faces=inst.faces, name='AllFaces')");
+    L.push("m.Velocity(name='InitialVelocity', region=a.sets['AllFaces'],");
+    L.push("           field='', distributionType=MAGNITUDE,");
+    L.push("           velocity1=0.0, velocity2=0.0, velocity3=-VEL)");
+  }else{
+    L.push("# Modal extraction takes no applied load.");
+  }
+  L.push("");
+  L.push("# ---- Output requests --------------------------------------------");
+  if(A==="modal"||A==="buckling"){
+    L.push("m.fieldOutputRequests['F-Output-1'].setValues(variables=('U', ))");
+  }else if(isExp){
+    L.push("m.fieldOutputRequests['F-Output-1'].setValues(");
+    L.push("    variables=('S','U','V','A','PEEQ','STATUS'), numIntervals=40)");
+    L.push("m.HistoryOutputRequest(name='Energies', createStepName='Impact',");
+    L.push("                       variables=('ALLKE','ALLIE','ALLAE','ALLSE'))");
+  }else{
+    L.push("m.fieldOutputRequests['F-Output-1'].setValues(variables=('S','U','E','RF'))");
+  }
+  L.push("");
+  L.push("# ---- Job --------------------------------------------------------");
+  L.push("job = mdb.Job(name='" + jobName + "', model='" + jobName + "',");
+  L.push("              numCpus=4, numDomains=4,");
+  L.push("              explicitPrecision=DOUBLE_PLUS_PACK)" );
+  L.push("job.writeInput(consistencyChecking=OFF)");
+  L.push("# Uncomment to solve immediately:");
+  L.push("# job.submit(consistencyChecking=OFF)");
+  L.push("# job.waitForCompletion()");
+  L.push("print('Input deck written: " + jobName + ".inp')");
+  return L.join("\n");
+}
+
+/* =========================================================
+   SCRIPT GENERATORS — ANSYS (APDL)
+   ========================================================= */
+function apdlBC(bc){
+  var t=[];
+  t.push("! ---- Boundary conditions ---------------------------------------");
+  if(bc==="ssss"){
+    t.push("NSEL,S,LOC,X,0");
+    t.push("NSEL,A,LOC,X,LL");
+    t.push("NSEL,A,LOC,Y,0");
+    t.push("NSEL,A,LOC,Y,WW");
+    t.push("D,ALL,UX,0");
+    t.push("D,ALL,UY,0");
+    t.push("D,ALL,UZ,0            ! simply supported: rotations left free");
+  }else if(bc==="cccc"){
+    t.push("NSEL,S,LOC,X,0");
+    t.push("NSEL,A,LOC,X,LL");
+    t.push("NSEL,A,LOC,Y,0");
+    t.push("NSEL,A,LOC,Y,WW");
+    t.push("D,ALL,ALL,0           ! clamped: all DOF restrained");
+  }else if(bc==="cfff"){
+    t.push("NSEL,S,LOC,X,0");
+    t.push("D,ALL,ALL,0           ! cantilever root");
+  }else{
+    t.push("NSEL,S,LOC,X,0");
+    t.push("NSEL,A,LOC,X,LL");
+    t.push("D,ALL,UX,0");
+    t.push("D,ALL,UY,0");
+    t.push("D,ALL,UZ,0");
+  }
+  t.push("ALLSEL,ALL");
+  return t.join("\n");
+}
+
+function genAnsys(){
+  var A=S.analysis;
+  var L=[];
+  L.push("! =================================================================");
+  L.push("!  Plate " + A + " analysis -- generated by CAE Copilot");
+  L.push("!  Units: SI (m, kg, s, Pa, N)");
+  L.push("!  Run:  ansys -b -i " + fileNameFor() + " -o out.txt");
+  L.push("! =================================================================");
+  L.push("FINISH");
+  L.push("/CLEAR,START");
+  L.push("/TITLE,Plate " + A + " analysis");
+  L.push("/PREP7");
+  L.push("");
+  L.push("! ---- Parameters -------------------------------------------------");
+  L.push("LL   = " + n(S.L) + "        ! length, x (m)");
+  L.push("WW   = " + n(S.W) + "        ! width,  y (m)");
+  L.push("TH   = " + n(S.h) + "        ! thickness (m)");
+  L.push("EX_  = " + n(S.E*1e9) + "    ! Young's modulus (Pa)");
+  L.push("NU_  = " + n(S.nu) + "       ! Poisson's ratio");
+  L.push("RHO_ = " + n(S.rho) + "      ! density (kg/m^3)");
+  L.push("ESZ  = " + n(S.seed) + "     ! element size (m)");
+  if(A==="modal"||A==="buckling") L.push("NMODE = " + S.modes + "      ! modes to extract");
+  if(A==="static") L.push("PRES = " + n(S.press) + "    ! uniform pressure (Pa)");
+  if(A==="harmonic"){
+    L.push("F1   = " + n(S.f1) + "      ! sweep start (Hz)");
+    L.push("F2   = " + n(S.f2) + "      ! sweep end (Hz)");
+    L.push("NSUB = 200                  ! substeps across the band");
+    L.push("DMP  = " + n(S.damp) + "    ! constant damping ratio");
+    L.push("FRC  = " + n(S.force) + "   ! point force amplitude (N)");
+  }
+  L.push("");
+  L.push("! ---- Element type and section -----------------------------------");
+  L.push("ET,1,SHELL181");
+  L.push("KEYOPT,1,3,2              ! full integration");
+  L.push("SECTYPE,1,SHELL");
+  L.push("SECDATA,TH,1,0,5          ! thickness, matid, angle, 5 int. points");
+  L.push("");
+  L.push("! ---- Material ---------------------------------------------------");
+  L.push("MP,EX,1,EX_");
+  L.push("MP,PRXY,1,NU_");
+  L.push("MP,DENS,1,RHO_");
+  L.push("");
+  L.push("! ---- Geometry and mesh -------------------------------------------");
+  L.push("RECTNG,0,LL,0,WW");
+  L.push("ESIZE,ESZ");
+  L.push("MSHKEY,1                  ! mapped mesh");
+  L.push("AMESH,ALL");
+  L.push("");
+  L.push(apdlBC(S.bc));
+  L.push("");
+  if(A==="static"){
+    L.push("! ---- Pressure load ----------------------------------------------");
+    L.push("ESEL,ALL");
+    L.push("SFE,ALL,1,PRES,,PRES      ! face 1 = bottom (-z) of SHELL181");
+    L.push("ALLSEL,ALL");
+    L.push("");
+  }else if(A==="harmonic"){
+    L.push("! ---- Excitation: unit point force at the plate centre ------------");
+    L.push("NCEN = NODE(LL/2, WW/2, 0)");
+    L.push("F,NCEN,FZ,FRC");
+    L.push("ALLSEL,ALL");
+    L.push("");
+  }else if(A==="buckling"){
+    L.push("! ---- Reference in-plane compression on x = LL --------------------");
+    L.push("NSEL,S,LOC,X,LL");
+    L.push("F,ALL,FX,-1.0             ! unit reference load");
+    L.push("ALLSEL,ALL");
+    L.push("");
+  }
+  L.push("FINISH");
+  L.push("/SOLU");
+  if(A==="static"){
+    L.push("ANTYPE,STATIC");
+    L.push("SOLVE");
+  }else if(A==="modal"){
+    L.push("ANTYPE,MODAL");
+    L.push("MODOPT,LANB,NMODE");
+    L.push("MXPAND,NMODE,,,YES        ! expand and write element results");
+    L.push("SOLVE");
+  }else if(A==="buckling"){
+    L.push("! Pass 1: static with prestress on");
+    L.push("ANTYPE,STATIC");
+    L.push("PSTRES,ON");
+    L.push("SOLVE");
+    L.push("FINISH");
+    L.push("");
+    L.push("! Pass 2: eigenvalue buckling");
+    L.push("/SOLU");
+    L.push("ANTYPE,BUCKLE");
+    L.push("BUCOPT,LANB,NMODE");
+    L.push("MXPAND,NMODE");
+    L.push("SOLVE");
+  }else if(A==="harmonic"){
+    L.push("ANTYPE,MODAL             ! modal basis for mode superposition");
+    L.push("MODOPT,LANB,60");
+    L.push("MXPAND,60");
+    L.push("SOLVE");
+    L.push("FINISH");
+    L.push("");
+    L.push("/SOLU");
+    L.push("ANTYPE,HARMIC");
+    L.push("HROPT,MSUP");
+    L.push("HARFRQ,F1,F2");
+    L.push("NSUBST,NSUB");
+    L.push("KBC,1");
+    L.push("DMPRAT,DMP");
+    L.push("SOLVE");
+  }
+  L.push("FINISH");
+  L.push("");
+  L.push("! ---- Post-processing ---------------------------------------------");
+  if(A==="modal"||A==="buckling"){
+    L.push("/POST1");
+    L.push("SET,LIST                  ! list extracted eigenvalues");
+    L.push("*DIM,FRQ,ARRAY,NMODE");
+    L.push("*DO,I,1,NMODE");
+    L.push("  SET,1,I");
+    L.push("  *GET,FRQ(I),ACTIVE,0,SET,FREQ");
+    L.push("*ENDDO");
+    L.push("*CFOPEN,eigenvalues,csv");
+    L.push("*VWRITE,FRQ(1)");
+    L.push("(F20.6)");
+    L.push("*CFCLOS");
+  }else if(A==="harmonic"){
+    L.push("/POST26");
+    L.push("NSOL,2,NCEN,U,Z,UZ_centre");
+    L.push("PRVAR,2");
+    L.push("PLVAR,2");
+  }else{
+    L.push("/POST1");
+    L.push("SET,LAST");
+    L.push("PLNSOL,U,Z,0,1.0          ! out-of-plane displacement");
+    L.push("PLNSOL,S,EQV,0,1.0        ! von Mises stress");
+    L.push("*GET,UMAX,PLNSOL,0,MAX");
+    L.push("/COM, Peak displacement = %UMAX%");
+  }
+  L.push("FINISH");
+  return L.join("\n");
+}
+
+/* =========================================================
+   SCRIPT GENERATORS — LS-DYNA (keyword)
+   ========================================================= */
+function genLsdyna(){
+  var nx=Math.max(2,Math.round(S.L/S.seed)), ny=Math.max(2,Math.round(S.W/S.seed));
+  var L=[];
+  L.push("$ =================================================================");
+  L.push("$  Plate impact -- generated by CAE Copilot");
+  L.push("$  Units: SI (m, kg, s, Pa, N)  --  keep this consistent!");
+  L.push("$  Mesh:  " + nx + " x " + ny + " shell elements, seed " + n(S.seed) + " m");
+  L.push("$  Node and element cards come from your preprocessor; the control,");
+  L.push("$  material, section and boundary cards below are complete.");
+  L.push("$ =================================================================");
+  L.push("*KEYWORD");
+  L.push("*TITLE");
+  L.push("Plate impact analysis");
+  L.push("$");
+  L.push("$---- Control cards ------------------------------------------------");
+  L.push("*CONTROL_TERMINATION");
+  L.push("$#  endtim    endcyc     dtmin    endeng    endmas");
+  L.push(pad(n(S.time),10) + pad("0",10) + pad("0.0",10) + pad("0.0",10) + pad("0.0",10));
+  L.push("*CONTROL_TIMESTEP");
+  L.push("$#  dtinit    tssfac      isdo    tslimt     dt2ms      lctm     erode");
+  L.push(pad("0.0",10) + pad("0.9",10) + pad("0",10) + pad("0.0",10) + pad("0.0",10));
+  L.push("*CONTROL_ENERGY");
+  L.push("$#     hgen      rwen    slnten     rylen");
+  L.push(pad("2",10) + pad("2",10) + pad("2",10) + pad("2",10));
+  L.push("*CONTROL_SHELL");
+  L.push("$#  wrpang    esort     irnxx    istupd    theory       bwc     miter");
+  L.push(pad("20.0",10) + pad("2",10) + pad("-1",10) + pad("1",10) + pad("2",10) + pad("2",10) + pad("1",10));
+  L.push("$");
+  L.push("$---- Output -------------------------------------------------------");
+  L.push("*DATABASE_BINARY_D3PLOT");
+  L.push("$#      dt");
+  L.push(pad(n(S.time/40),10));
+  L.push("*DATABASE_GLSTAT");
+  L.push(pad(n(S.time/200),10));
+  L.push("*DATABASE_MATSUM");
+  L.push(pad(n(S.time/200),10));
+  L.push("$");
+  L.push("$---- Section: Belytschko-Tsay shell -------------------------------");
+  L.push("*SECTION_SHELL");
+  L.push("$#    secid    elform      shrf       nip");
+  L.push(pad("1",10) + pad("2",10) + pad("0.8333",10) + pad("5",10));
+  L.push("$#       t1        t2        t3        t4");
+  L.push(pad(n(S.h),10) + pad(n(S.h),10) + pad(n(S.h),10) + pad(n(S.h),10));
+  L.push("$");
+  L.push("$---- Material: elastic-plastic, piecewise linear ------------------");
+  L.push("*MAT_PIECEWISE_LINEAR_PLASTICITY");
+  L.push("$#     mid        ro         e        pr      sigy      etan");
+  L.push(pad("1",10) + pad(n(S.rho),10) + pad(n(S.E*1e9),10) + pad(n(S.nu),10) + pad("2.5E+8",10) + pad("0.0",10));
+  L.push("$#     fail    tdel         c         p      lcss");
+  L.push(pad("0.2",10) + pad("0.0",10) + pad("40.0",10) + pad("5.0",10) + pad("0",10));
+  L.push("$");
+  L.push("*PART");
+  L.push("$#                                                             title");
+  L.push("Plate");
+  L.push("$#     pid     secid       mid");
+  L.push(pad("1",10) + pad("1",10) + pad("1",10));
+  L.push("$");
+  L.push("$---- Initial condition: impact velocity in -z ---------------------");
+  L.push("*INITIAL_VELOCITY_GENERATION");
+  L.push("$#      id     styp     omega        vx        vy        vz");
+  L.push(pad("1",10) + pad("2",10) + pad("0.0",10) + pad("0.0",10) + pad("0.0",10) + pad(n(-S.vel),10));
+  L.push("$");
+  L.push("$---- Boundary conditions (" + S.bc.toUpperCase() + ") -------------------------------");
+  L.push("$ Create *SET_NODE_LIST sets from your preprocessor, then:");
+  L.push("*BOUNDARY_SPC_SET");
+  L.push("$#    nsid       cid      dofx      dofy      dofz     dofrx     dofry     dofrz");
+  if(S.bc==="cccc"||S.bc==="cfff"){
+    L.push(pad("1",10)+pad("0",10)+pad("1",10)+pad("1",10)+pad("1",10)+pad("1",10)+pad("1",10)+pad("1",10));
+    L.push("$ Set 1 = " + (S.bc==="cfff" ? "the x=0 edge only (cantilever root)" : "all four edges (clamped)"));
+  }else{
+    L.push(pad("1",10)+pad("0",10)+pad("1",10)+pad("1",10)+pad("1",10)+pad("0",10)+pad("0",10)+pad("0",10));
+    L.push("$ Set 1 = " + (S.bc==="sfsf" ? "the x=0 and x=L edges" : "all four edges") + " (simply supported)");
+  }
+  L.push("$");
+  L.push("$---- Contact (add when a striker body is present) -----------------");
+  L.push("*CONTACT_AUTOMATIC_SURFACE_TO_SURFACE_ID");
+  L.push("$#     cid                                                       title");
+  L.push(pad("1",10) + "Striker to plate");
+  L.push("$#    ssid      msid     sstyp     mstyp");
+  L.push(pad("2",10) + pad("1",10) + pad("3",10) + pad("3",10));
+  L.push("$#      fs        fd        dc        vc       vdc");
+  L.push(pad("0.2",10) + pad("0.15",10) + pad("0.0",10) + pad("0.0",10) + pad("20.0",10));
+  L.push("$");
+  L.push("$---- Mesh ---------------------------------------------------------");
+  L.push("$ *NODE and *ELEMENT_SHELL cards go here.");
+  L.push("$ Suggested: " + nx + " divisions along x, " + ny + " along y.");
+  L.push("$INCLUDE");
+  L.push("mesh.k");
+  L.push("$");
+  L.push("*END");
+  return L.join("\n");
+}
+function pad(s,w){s=String(s); while(s.length<w) s=" "+s; return s;}
+
+/* =========================================================
+   SCRIPT GENERATORS — MATLAB
+   ========================================================= */
+function matlabWarburtonBlock(){
+  return [
+"function [G,H,J] = beamCoeff(bc, m)",
+"%BEAMCOEFF Warburton characteristic beam-function coefficients.",
+"%   bc : 'SS' simply supported, 'CC' clamped, 'CF' clamped-free,",
+"%        'FF' free-free (first two indices are the rigid-body modes)",
+"%   m  : mode index along that direction (1,2,3,...)",
+"%   Reference: G.B. Warburton, Proc. IMechE 168 (1954) 371-384.",
+"%",
+"%   Validated against the standard square-plate frequency parameters",
+"%   lambda = omega*a^2*sqrt(rho*h/D):",
+"%     SSSS  19.74 (exact)   CCCC  36.13 vs 35.99  (+0.4%)",
+"%     CFFF   3.52 vs 3.492  (+0.7%)   SFSF  9.87 (exact)",
+"switch upper(bc)",
+"  case 'SS'",
+"    G = m;  H = m^2;  J = m^2;",
+"  case 'CC'",
+"    if m == 1",
+"      G = 1.506;  H = 1.248;  J = 1.248;",
+"    else",
+"      G = m + 0.5;",
+"      H = G^2*(1 - 2/(G*pi));",
+"      J = H;",
+"    end",
+"  case 'CF'",
+"    if m == 1",
+"      G = 0.597;  H = -0.0870;  J = 0.471;",
+"    else",
+"      G = m - 0.5;",
+"      H = G^2*(1 - 2/(G*pi));",
+"      J = G^2*(1 + 2/(G*pi));",
+"    end",
+"  case 'FF'",
+"    % m = 1 and m = 2 are the rigid-body translation and rotation:",
+"    % they carry no bending energy in this direction.",
+"    if m == 1",
+"      G = 0;  H = 0;  J = 0;",
+"    elseif m == 2",
+"      G = 0;  H = 0;  J = 12/pi^2;",
+"    else",
+"      G = m - 1.5;",
+"      H = G^2*(1 - 2/(G*pi));",
+"      J = G^2*(1 + 2/(G*pi));",
+"    end",
+"  otherwise",
+"    error('Unsupported edge condition: %s', bc);",
+"end",
+"end"].join("\n");
+}
+
+function bcToBeamPair(bc){
+  // [x-direction, y-direction] equivalent beam conditions.
+  // A FREE plate edge maps to a free-free beam, NOT clamped-free:
+  // getting this wrong overpredicts the cantilever fundamental by 113%.
+  if(bc==="ssss") return ["SS","SS"];  // exact Navier used instead
+  if(bc==="cccc") return ["CC","CC"];
+  if(bc==="cfff") return ["CF","FF"];  // clamped at x=0; y edges free
+  return ["SS","FF"];                  // sfsf: SS on x edges; y edges free
+}
+
+function genMatlabModal(){
+  var pair=bcToBeamPair(S.bc);
+  var L=[];
+  L.push("%% Natural frequencies of a rectangular plate");
+  L.push("%  Generated by CAE Copilot.  Units: SI (m, kg, s, Pa).");
+  L.push("%  Edge condition: " + S.bc.toUpperCase());
+  L.push("%");
+  L.push("%  Method: classical laminated plate theory (thin plate, Kirchhoff).");
+  if(S.bc==="ssss"){
+    L.push("%  SSSS has an exact Navier solution, used directly below.");
+  }else{
+    L.push("%  Non-SSSS edges use Warburton's characteristic beam functions,");
+    L.push("%  which are accurate to roughly 1-2%% for the lower modes.");
+    L.push("%  ALWAYS confirm against your FE model before quoting these.");
+  }
+  L.push("");
+  L.push("clear; clc; close all;");
+  L.push("");
+  L.push("%% ---- Inputs -----------------------------------------------------");
+  L.push("a   = " + n(S.L) + ";        % length, x (m)");
+  L.push("b   = " + n(S.W) + ";        % width,  y (m)");
+  L.push("h   = " + n(S.h) + ";        % thickness (m)");
+  L.push("E   = " + n(S.E*1e9) + ";    % Young's modulus (Pa)");
+  L.push("nu  = " + n(S.nu) + ";       % Poisson's ratio");
+  L.push("rho = " + n(S.rho) + ";      % density (kg/m^3)");
+  L.push("M   = 6;                     % modes retained in x");
+  L.push("N   = 6;                     % modes retained in y");
+  L.push("");
+  L.push("D  = E*h^3/(12*(1 - nu^2));  % flexural rigidity (N.m)");
+  L.push("mu = rho*h;                  % mass per unit area (kg/m^2)");
+  L.push("");
+  L.push("fprintf('Flexural rigidity D = %.4e N.m\\n', D);");
+  L.push("fprintf('Areal mass      mu = %.4e kg/m^2\\n\\n', mu);");
+  L.push("");
+  L.push("%% ---- Slenderness check ------------------------------------------");
+  L.push("if h/min(a,b) > 0.05");
+  L.push("  warning(['h/L = %.3f exceeds 0.05: thin-plate theory will ' ...");
+  L.push("           'overpredict frequencies. Use FSDT or a shell FE model.'], h/min(a,b));");
+  L.push("end");
+  L.push("");
+  L.push("%% ---- Natural frequencies ----------------------------------------");
+  L.push("f = zeros(M, N);");
+  if(S.bc==="ssss"){
+    L.push("for m = 1:M");
+    L.push("  for nn = 1:N");
+    L.push("    % Exact Navier solution for all edges simply supported");
+    L.push("    k = (m*pi/a)^2 + (nn*pi/b)^2;");
+    L.push("    w = k*sqrt(D/mu);            % rad/s");
+    L.push("    f(m,nn) = w/(2*pi);          % Hz");
+    L.push("  end");
+    L.push("end");
+  }else{
+    L.push("bcx = '" + pair[0] + "';   % edge condition along x");
+    L.push("bcy = '" + pair[1] + "';   % edge condition along y");
+    L.push("for m = 1:M");
+    L.push("  [Gx, Hx, Jx] = beamCoeff(bcx, m);");
+    L.push("  for nn = 1:N");
+    L.push("    [Gy, Hy, Jy] = beamCoeff(bcy, nn);");
+    L.push("    % Warburton's Rayleigh quotient for a rectangular plate");
+    L.push("    term = Gx^4/a^4 + Gy^4/b^4 ...");
+    L.push("         + 2/(a^2*b^2)*(nu*Hx*Hy + (1 - nu)*Jx*Jy);");
+    L.push("    w = pi^2*sqrt(D/mu)*sqrt(term);");
+    L.push("    f(m,nn) = w/(2*pi);");
+    L.push("  end");
+    L.push("end");
+  }
+  L.push("");
+  L.push("%% ---- Report ------------------------------------------------------");
+  L.push("[fs, idx] = sort(f(:));");
+  L.push("[mi, ni]  = ind2sub(size(f), idx);");
+  L.push("nShow = min(" + S.modes + ", numel(fs));");
+  L.push("");
+  L.push("fprintf(' Mode    m    n     f (Hz)\\n');");
+  L.push("fprintf('-----------------------------\\n');");
+  L.push("for k = 1:nShow");
+  L.push("  fprintf('%5d %4d %4d %10.3f\\n', k, mi(k), ni(k), fs(k));");
+  L.push("end");
+  L.push("");
+  if(S.bc==="ssss"){
+    L.push("%% ---- Fundamental mode shape --------------------------------------");
+    L.push("nx = 60; ny = 60;");
+    L.push("[X, Y] = meshgrid(linspace(0,a,nx), linspace(0,b,ny));");
+    L.push("m1 = mi(1); n1 = ni(1);");
+    L.push("Wshape = sin(m1*pi*X/a).*sin(n1*pi*Y/b);   % exact SSSS mode shape");
+    L.push("");
+    L.push("figure('Color','w');");
+    L.push("surf(X, Y, Wshape, 'EdgeColor','none');");
+    L.push("colormap(jet); view(-35,40); axis tight;");
+    L.push("xlabel('x (m)'); ylabel('y (m)'); zlabel('w / w_{max}');");
+    L.push("title(sprintf('Mode 1  (m=%d, n=%d)   f = %.2f Hz', m1, n1, fs(1)));");
+    L.push("");
+  } else {
+    L.push("%% ---- Mode shapes --------------------------------------------------");
+    L.push("% Warburton's method returns FREQUENCIES only. The mode shapes for");
+    L.push("% " + S.bc.toUpperCase() + " are products of characteristic beam functions, not simple");
+    L.push("% sines -- plotting a sine here would be wrong. Take the shapes from");
+    L.push("% the FE model instead (this tool generates that script too).");
+    L.push("");
+  }
+  L.push("%% ---- Local functions ---------------------------------------------");
+  if(S.bc!=="ssss"){ L.push(matlabWarburtonBlock()); }
+  else { L.push("% (none required for the exact SSSS solution)"); }
+  return L.join("\n");
+}
+
+function genMatlabHarmonic(){
+  var L=[];
+  L.push("%% Harmonic response of a simply supported rectangular plate");
+  L.push("%  Modal superposition, point force at (xf, yf).");
+  L.push("%  Generated by CAE Copilot.  Units: SI.");
+  L.push("");
+  L.push("clear; clc; close all;");
+  L.push("");
+  L.push("%% ---- Inputs -----------------------------------------------------");
+  L.push("a    = " + n(S.L) + ";      % length (m)");
+  L.push("b    = " + n(S.W) + ";      % width (m)");
+  L.push("h    = " + n(S.h) + ";      % thickness (m)");
+  L.push("E    = " + n(S.E*1e9) + ";  % Young's modulus (Pa)");
+  L.push("nu   = " + n(S.nu) + ";     % Poisson's ratio");
+  L.push("rho  = " + n(S.rho) + ";    % density (kg/m^3)");
+  L.push("zeta = " + n(S.damp) + ";   % modal damping ratio");
+  L.push("F0   = " + n(S.force) + ";  % force amplitude (N)");
+  L.push("xf   = 0.35*a;              % force position x (m)");
+  L.push("yf   = 0.42*b;              % force position y (m)  (off-centre:");
+  L.push("                            %  a centred force cannot excite");
+  L.push("                            %  antisymmetric modes at all)");
+  L.push("M = 8; N = 8;               % modes retained");
+  L.push("");
+  L.push("f1 = " + n(S.f1) + "; f2 = " + n(S.f2) + "; nf = 1200;");
+  L.push("freq = linspace(f1, f2, nf);");
+  L.push("w    = 2*pi*freq;");
+  L.push("");
+  L.push("D  = E*h^3/(12*(1-nu^2));");
+  L.push("mu = rho*h;");
+  L.push("Mn = mu*a*b/4;              % modal mass, normalised sine modes");
+  L.push("");
+  L.push("%% ---- Response at the drive point ---------------------------------");
+  L.push("xr = xf; yr = yf;           % receiver = drive point (input mobility)");
+  L.push("W  = zeros(size(w));");
+  L.push("");
+  L.push("for m = 1:M");
+  L.push("  for n = 1:N");
+  L.push("    wmn = ((m*pi/a)^2 + (n*pi/b)^2)*sqrt(D/mu);   % rad/s");
+  L.push("    phi_f = sin(m*pi*xf/a)*sin(n*pi*yf/b);");
+  L.push("    phi_r = sin(m*pi*xr/a)*sin(n*pi*yr/b);");
+  L.push("    Hmn = 1./(Mn*(wmn^2 - w.^2 + 2i*zeta*wmn*w));");
+  L.push("    W = W + F0*phi_f*phi_r*Hmn;");
+  L.push("  end");
+  L.push("end");
+  L.push("");
+  L.push("V = 1i*w.*W;                % velocity (m/s)");
+  L.push("");
+  L.push("%% ---- Plots -------------------------------------------------------");
+  L.push("figure('Color','w','Position',[100 100 780 560]);");
+  L.push("");
+  L.push("subplot(2,1,1);");
+  L.push("semilogy(freq, abs(W), 'LineWidth', 1.2);");
+  L.push("grid on; xlabel('Frequency (Hz)'); ylabel('|w| (m)');");
+  L.push("title('Displacement response at the drive point');");
+  L.push("");
+  L.push("subplot(2,1,2);");
+  L.push("Vref = 1e-9;                % reference velocity (m/s)");
+  L.push("plot(freq, 20*log10(abs(V)/Vref), 'LineWidth', 1.2);");
+  L.push("grid on; xlabel('Frequency (Hz)'); ylabel('Velocity level (dB re 1 nm/s)');");
+  L.push("title('Velocity level');");
+  return L.join("\n");
+}
+
+function genMatlabVibac(){
+  var L=[];
+  L.push("%% Vibroacoustic response of a baffled simply supported plate");
+  L.push("%  Modal velocity response + far-field radiated sound power using");
+  L.push("%  the elemental radiator (lumped parameter) model.");
+  L.push("%  Generated by CAE Copilot.  Units: SI.");
+  L.push("%");
+  L.push("%  Radiated power:  W = Ae^2 * real(v' * R * v)");
+  L.push("%  with the radiation resistance matrix");
+  L.push("%       R_ij = (w^2 rho0 / (4 pi c0)) * sinc(k r_ij)");
+  L.push("%  and v the complex velocity AMPLITUDE (not rms) at each element.");
+  L.push("%  Checked against the small-baffled-piston limit,");
+  L.push("%  W = |v|^2 w^2 rho0 Ae^2 / (4 pi c0), and sigma -> 1 above coincidence.");
+  L.push("%  See Elliott & Johnson, JASA 94 (1993) 2194-2204.");
+  L.push("");
+  L.push("clear; clc; close all;");
+  L.push("");
+  L.push("%% ---- Structure ---------------------------------------------------");
+  L.push("a    = " + n(S.L) + ";      % length (m)");
+  L.push("b    = " + n(S.W) + ";      % width (m)");
+  L.push("h    = " + n(S.h) + ";      % thickness (m)");
+  L.push("E    = " + n(S.E*1e9) + ";  % Young's modulus (Pa)");
+  L.push("nu   = " + n(S.nu) + ";     % Poisson's ratio");
+  L.push("rho  = " + n(S.rho) + ";    % density (kg/m^3)");
+  L.push("zeta = " + n(S.damp) + ";   % modal damping ratio");
+  L.push("");
+  L.push("%% ---- Fluid (air at 20 C) ----------------------------------------");
+  L.push("rho0 = 1.21;                % density (kg/m^3)");
+  L.push("c0   = 343;                 % speed of sound (m/s)");
+  L.push("");
+  L.push("%% ---- Excitation --------------------------------------------------");
+  L.push("F0 = " + n(S.force) + ";    % point force (N)");
+  L.push("xf = 0.35*a;  yf = 0.42*b;  % off-centre drive point");
+  L.push("");
+  L.push("M = 8; N = 8;               % structural modes retained");
+  L.push("ne = 12;                    % elemental radiators per side (ne x ne)");
+  L.push("");
+  L.push("f1 = " + n(S.f1) + "; f2 = " + n(S.f2) + "; nf = 400;");
+  L.push("freq = linspace(f1, f2, nf);");
+  L.push("");
+  L.push("D  = E*h^3/(12*(1-nu^2));");
+  L.push("mu = rho*h;");
+  L.push("Mn = mu*a*b/4;");
+  L.push("");
+  L.push("%% ---- Elemental radiator grid -------------------------------------");
+  L.push("dx = a/ne;  dy = b/ne;  Ae = dx*dy;");
+  L.push("");
+  L.push("% VALIDITY: each radiator must be small against the acoustic");
+  L.push("% wavelength, or the lumped model overpredicts power badly (a rigid");
+  L.push("% piston test gives sigma = 23 instead of 1 when this is violated).");
+  L.push("neMin = ceil(4*max(a,b)*f2/c0);");
+  L.push("if ne < neMin");
+  L.push("  warning(['ne = %d is too coarse for %.0f Hz. Need ne >= %d ' ...");
+  L.push("           '(4 elements per acoustic wavelength).'], ne, f2, neMin);");
+  L.push("  ne = neMin;");
+  L.push("  dx = a/ne;  dy = b/ne;  Ae = dx*dy;");
+  L.push("end");
+  L.push("xc = (0.5:ne-0.5)*dx;");
+  L.push("yc = (0.5:ne-0.5)*dy;");
+  L.push("[XC, YC] = meshgrid(xc, yc);");
+  L.push("XC = XC(:);  YC = YC(:);");
+  L.push("Ne = numel(XC);");
+  L.push("");
+  L.push("% Pairwise distances between element centres");
+  L.push("Rij = sqrt((XC - XC.').^2 + (YC - YC.').^2);");
+  L.push("");
+  L.push("% Mode shapes sampled at the element centres");
+  L.push("PHI  = zeros(Ne, M*N);");
+  L.push("wmn  = zeros(1, M*N);");
+  L.push("phif = zeros(1, M*N);");
+  L.push("col  = 0;");
+  L.push("for m = 1:M");
+  L.push("  for n = 1:N");
+  L.push("    col = col + 1;");
+  L.push("    PHI(:,col) = sin(m*pi*XC/a).*sin(n*pi*YC/b);");
+  L.push("    wmn(col)   = ((m*pi/a)^2 + (n*pi/b)^2)*sqrt(D/mu);");
+  L.push("    phif(col)  = sin(m*pi*xf/a)*sin(n*pi*yf/b);");
+  L.push("  end");
+  L.push("end");
+  L.push("");
+  L.push("%% ---- Frequency sweep ---------------------------------------------");
+  L.push("Wrad = zeros(size(freq));");
+  L.push("Vbar = zeros(size(freq));");
+  L.push("");
+  L.push("for ii = 1:nf");
+  L.push("  w = 2*pi*freq(ii);");
+  L.push("  k = w/c0;");
+  L.push("");
+  L.push("  % Modal displacement amplitudes");
+  L.push("  q = F0*phif./(Mn*(wmn.^2 - w^2 + 2i*zeta*wmn*w));");
+  L.push("");
+  L.push("  % Normal velocity at each elemental radiator");
+  L.push("  v = 1i*w*(PHI*q.');");
+  L.push("");
+  L.push("  % Radiation resistance matrix (sinc with the 0/0 limit = 1)");
+  L.push("  KR = k*Rij;");
+  L.push("  Sc = ones(size(KR));");
+  L.push("  nz = KR > 1e-12;");
+  L.push("  Sc(nz) = sin(KR(nz))./KR(nz);");
+  L.push("  R = (w^2*rho0/(4*pi*c0))*Sc;");
+  L.push("");
+  L.push("  Wrad(ii) = Ae^2*real(v'*R*v);");
+  L.push("  Vbar(ii) = sqrt(mean(abs(v).^2)/2);   % space-averaged rms velocity");
+  L.push("end");
+  L.push("");
+  L.push("%% ---- Radiation efficiency ----------------------------------------");
+  L.push("Splate = a*b;");
+  L.push("sigma  = Wrad./(rho0*c0*Splate*Vbar.^2);");
+  L.push("");
+  L.push("%% ---- Plots -------------------------------------------------------");
+  L.push("Wref = 1e-12;               % reference power (W)");
+  L.push("");
+  L.push("figure('Color','w','Position',[100 100 800 640]);");
+  L.push("");
+  L.push("subplot(3,1,1);");
+  L.push("plot(freq, 10*log10(Wrad/Wref), 'LineWidth', 1.2);");
+  L.push("grid on; ylabel('L_W (dB re 1 pW)');");
+  L.push("title('Radiated sound power');");
+  L.push("");
+  L.push("subplot(3,1,2);");
+  L.push("semilogy(freq, Vbar, 'LineWidth', 1.2);");
+  L.push("grid on; ylabel('<v^2>^{1/2} (m/s)');");
+  L.push("title('Space-averaged rms velocity');");
+  L.push("");
+  L.push("subplot(3,1,3);");
+  L.push("semilogy(freq, sigma, 'LineWidth', 1.2);");
+  L.push("grid on; xlabel('Frequency (Hz)'); ylabel('\\sigma');");
+  L.push("title('Radiation efficiency');");
+  L.push("");
+  L.push("% Critical frequency: above it the plate radiates efficiently");
+  L.push("fc = c0^2/(2*pi)*sqrt(mu/D);");
+  L.push("fprintf('Critical (coincidence) frequency = %.1f Hz\\n', fc);");
+  return L.join("\n");
+}
+
+function genMatlab(){
+  if(S.analysis==="harmonic") return genMatlabHarmonic();
+  if(S.analysis==="vibac")    return genMatlabVibac();
+  return genMatlabModal();
+}
+
+/* =========================================================
+   DISPATCH + RUN COMMAND
+   ========================================================= */
+function fileNameFor(){
+  var sv=SOLVERS.filter(function(x){return x.id===S.solver;})[0];
+  return sv.file.replace("%A%", S.analysis);
+}
+function runCmdFor(){
+  var f=fileNameFor();
+  if(S.solver==="abaqus") return "abaqus cae noGUI=" + f;
+  if(S.solver==="ansys")  return "ansys242 -b -i " + f + " -o output.txt";
+  if(S.solver==="lsdyna") return "lsdyna i=" + f + " ncpu=4 memory=200m";
+  return ">> run('" + f + "')";
+}
+function generate(){
+  if(!supported(S.solver,S.analysis)) return null;
+  if(S.solver==="abaqus") return genAbaqus();
+  if(S.solver==="ansys")  return genAnsys();
+  if(S.solver==="lsdyna") return genLsdyna();
+  return genMatlab();
+}
+
+/* =========================================================
+   SYNTAX HIGHLIGHTING (small, deterministic)
+   ========================================================= */
+var PATTERNS = {
+  py:   /(#[^\n]*)|('[^'\n]*'|"[^"\n]*")|\b(from|import|def|for|in|if|else|elif|return|None|True|False|del|class|while|try|except|as|with|print|max|min)\b|\b(\d+\.?\d*(?:[eE][-+]?\d+)?)\b/g,
+  m:    /(%[^\n]*)|('[^'\n]*')|\b(function|end|for|while|if|else|elseif|switch|case|otherwise|return|clear|clc|close|figure|fprintf|warning|error|zeros|ones|sqrt|linspace|meshgrid|surf|plot|semilogy|subplot|grid|xlabel|ylabel|zlabel|title|colormap|sort|numel|size|mean|abs|real|sin|pi|min|max|view|axis)\b|\b(\d+\.?\d*(?:[eE][-+]?\d+)?)\b/g,
+  apdl: /(![^\n]*)|('[^'\n]*')|^\s*(\/?[A-Z][A-Z0-9_]*)(?=,|\s*$)|\b(\d+\.?\d*(?:[eE][-+]?\d+)?)\b/gm,
+  dyna: /(\$[^\n]*)|^(\*[A-Z_]+)|\b(\d+\.?\d*(?:[eE][-+]?\d+)?)\b/gm
+};
+function highlight(src, lang){
+  var re = PATTERNS[lang];
+  if(!re) return esc(src);
+  var out="", last=0, mres;
+  re.lastIndex = 0;
+  while((mres = re.exec(src)) !== null){
+    if(mres.index < last){ continue; }
+    out += esc(src.slice(last, mres.index));
+    var cls, txt = mres[0], lead = "";
+    if(mres[1] !== undefined){ cls="tk-c"; }
+    else if(mres[2] !== undefined){ cls = (lang==="apdl"||lang==="dyna") ? "tk-k" : "tk-s"; }
+    else if(mres[3] !== undefined){ cls = (lang==="dyna") ? "tk-n" : "tk-k"; }
+    else { cls="tk-n"; }
+    // preserve any leading whitespace captured by the ^\s* group
+    var lw = txt.match(/^\s+/);
+    if(lw && (lang==="apdl")){ lead = lw[0]; txt = txt.slice(lead.length); }
+    out += esc(lead) + '<span class="' + cls + '">' + esc(txt) + '</span>';
+    last = mres.index + mres[0].length;
+    if(re.lastIndex === mres.index){ re.lastIndex++; }
+  }
+  out += esc(src.slice(last));
+  return out;
+}
+
+/* =========================================================
+   ERROR DOCTOR KNOWLEDGE BASE
+   ========================================================= */
+var ERRORS = [
+{
+  solver:"ABAQUS", sev:"high",
+  title:"Too many attempts made for this increment",
+  pat:/too many attempts|attempts made for this increment|time increment required is less than the minimum/i,
+  cause:"The Newton–Raphson iteration cannot find equilibrium at this load level. Abaqus cut the increment repeatedly and gave up. This is almost never a solver bug — the model has a genuine instability, an unconstrained region, or a material that has gone soft.",
+  fixes:[
+    "Check for rigid body motion first. Run a modal analysis on the same model: any near-zero natural frequency means an unconstrained direction.",
+    "Look at the last converged increment in the ODB. Where the displacement is growing fastest is where the problem is.",
+    "If the instability is physical (snap-through, buckling), switch from <code>*STATIC</code> to <code>*STATIC, STABILIZE</code> or use Riks arc-length.",
+    "Loosen the increment floor: <code>minInc=1e-9</code> buys convergence but costs runtime — a diagnostic, not a fix.",
+    "For contact-driven failures, add a small amount of contact stabilisation or start with a tiny interference-free gap."
+  ]
+},
+{
+  solver:"ABAQUS", sev:"high",
+  title:"Numerical singularity / zero pivot",
+  pat:/numerical singularity|zero pivot|solver problem.*singular|is unconstrained/i,
+  cause:"One or more degrees of freedom carry no stiffness, so the global stiffness matrix cannot be inverted. The message names the node and DOF — that is your prime suspect, not a symptom of it.",
+  fixes:[
+    "Read the node and DOF from the <code>.msg</code> file. DOF 1–3 are translations, 4–6 rotations.",
+    "A DOF 4–6 singularity on shells or solids usually means drilling rotation on a solid element — solids have no rotational stiffness. Constrain it or use a coupling.",
+    "Check for orphan mesh regions and unmerged instances: two parts that look coincident but share no nodes.",
+    "Confirm every part is either constrained or connected. An unattached bolt or washer is the classic cause.",
+    "Add a soft spring to ground (<code>*SPRING</code>, stiffness ~1e-6 of the structural stiffness) to identify the floating region without changing the answer."
+  ]
+},
+{
+  solver:"ABAQUS", sev:"med",
+  title:"Negative eigenvalues in the system matrix",
+  pat:/negative eigenvalue|system matrix has \d+ negative/i,
+  cause:"The tangent stiffness matrix is not positive definite. In a static step this signals buckling, snap-through or material softening. In a buckling or frequency step it can be benign.",
+  fixes:[
+    "In a <code>*BUCKLE</code> step this is expected and usually harmless — negative eigenvalues just mean buckling modes in the reverse load direction.",
+    "In a <code>*STATIC</code> step it is a real warning. If the analysis still converged, check whether the deformed shape looks like a buckling mode.",
+    "If it converged and the shape is sensible, you may proceed — but say so explicitly in your report rather than ignoring it.",
+    "If it did not converge, the structure is genuinely unstable: use Riks, or add stabilisation and check that <code>ALLSD</code> stays under about 2% of <code>ALLIE</code>."
+  ]
+},
+{
+  solver:"ABAQUS", sev:"med",
+  title:"Excessive element distortion",
+  pat:/excessive distortion|element.*distorted|distortion control/i,
+  cause:"One or more elements have deformed past what the formulation can represent. Usually a meshing problem in a region of high strain, or a material model with no hardening left.",
+  fixes:[
+    "Refine the mesh where distortion occurs, and prefer hex over tet elements in large-strain regions.",
+    "For rubber or foam, switch to hybrid elements (C3D8H) and check that the hyperelastic fit is stable at your strain level.",
+    "In Abaqus/Explicit, enable distortion control: <code>*SECTION CONTROLS, DISTORTION CONTROL=YES</code>.",
+    "Consider element deletion via a damage model if the material genuinely fails there.",
+    "Check that your initial mesh is not already distorted — look at the aspect ratio and Jacobian in the mesh verification tool."
+  ]
+},
+{
+  solver:"ABAQUS", sev:"med",
+  title:"Hourglassing — artificial energy too high",
+  pat:/hourglass|ALLAE|artificial energy/i,
+  cause:"Reduced-integration elements are deforming in zero-energy modes that carry no stress. The mesh looks like it is working but the stiffness is fictitious.",
+  fixes:[
+    "Rule of thumb: artificial energy <code>ALLAE</code> should stay below 5% of internal energy <code>ALLIE</code>. Above 10% the results are not trustworthy.",
+    "Refine the mesh — at least four elements through any bending-dominated thickness.",
+    "Switch from reduced (C3D8R, S4R) to full integration (C3D8, S4) where cost allows.",
+    "Enable enhanced hourglass control: <code>*SECTION CONTROLS, HOURGLASS=ENHANCED</code>.",
+    "Avoid point loads and point constraints, which excite hourglass modes directly. Distribute them over a small surface."
+  ]
+},
+{
+  solver:"ABAQUS", sev:"low",
+  title:"Missing density in a dynamic or frequency step",
+  pat:/density.*not defined|requires.*density|no density/i,
+  cause:"Frequency extraction, explicit dynamics and any mass-dependent step need a density on every material. A static analysis does not, so this often appears only when you extend an existing model.",
+  fixes:[
+    "Add <code>*DENSITY</code> to every material used in the model, not just the one you changed.",
+    "Check your units. In SI(mm) steel density is 7.85e-9 tonne/mm³, not 7850.",
+    "If a part is genuinely massless by intent, make it a rigid body rather than leaving density undefined."
+  ]
+},
+{
+  solver:"ABAQUS", sev:"med",
+  title:"Contact overclosure / initial penetration",
+  pat:/overclosure|initial penetration|clearance.*adjust|contact opening/i,
+  cause:"Surfaces are interpenetrating at the start of the step. Abaqus resolves this by applying a large corrective strain in one increment, which usually kills convergence.",
+  fixes:[
+    "Use <code>*CONTACT INTERFERENCE, SHRINK</code> to resolve the penetration gradually over the first step.",
+    "Add <code>ADJUST=</code> on the contact pair to move slave nodes onto the master surface with no strain.",
+    "Check your assembly geometry — the penetration is often a CAD positioning error, not a contact setting.",
+    "Make the finer, softer surface the slave. A coarse slave on a fine master penetrates visibly."
+  ]
+},
+{
+  solver:"ABAQUS", sev:"low",
+  title:"Analysis Input File Processor exited with an error",
+  pat:/input file processor|exited with an error|rank.*error.*pre\.exe/i,
+  cause:"The deck failed before solving. This is a syntax or definition error, and the real message is always further up in the .dat file.",
+  fixes:[
+    "Open the <code>.dat</code> file and search for the first line containing <code>***ERROR</code>. Everything after it is noise.",
+    "Common causes: a set referenced before definition, a typo in a keyword, or a material assigned to no region.",
+    "If you generated the deck from a script, check that the part was meshed before the job was written.",
+    "Run <code>abaqus datacheck job=name</code> to get the diagnostics without waiting for a solve."
+  ]
+},
+{
+  solver:"ANSYS", sev:"high",
+  title:"Small equation solver pivot term",
+  pat:/small equation solver pivot|pivot term|highly distorted elements.*pivot/i,
+  cause:"ANSYS's equivalent of a singular stiffness matrix: a DOF with negligible stiffness. Almost always an under-constrained model or a disconnected mesh region.",
+  fixes:[
+    "Check that every body has a support. Run a modal analysis — six near-zero modes means a completely free body.",
+    "Look for bonded contacts that did not detect: increase the pinball radius or check the contact status in the solution output.",
+    "Verify that shared topology or mesh connections actually merged the nodes at the interface.",
+    "Weak springs (<code>Solver Controls > Weak Springs = On</code>) will get you a solution, but treat it as a diagnostic — the displacement field will be wrong if the body was truly floating."
+  ]
+},
+{
+  solver:"ANSYS", sev:"med",
+  title:"Element has an excessively distorted shape",
+  pat:/excessively distorted shape|shape testing|element quality.*error/i,
+  cause:"Mesh quality is below the element's tolerance, either as generated or after deformation.",
+  fixes:[
+    "Check mesh metrics before solving: element quality, Jacobian ratio and aspect ratio in the Mesh > Statistics panel.",
+    "Use a sweep or multizone method instead of patch-conforming tetrahedrons on prismatic geometry.",
+    "Add a virtual topology or defeature small faces and slivers that force degenerate elements.",
+    "If the distortion arises during solution, this is a large-deformation problem — enable large deflection and consider remeshing."
+  ]
+},
+{
+  solver:"ANSYS", sev:"med",
+  title:"Solution not converged at this substep",
+  pat:/solution not converged|failed to converge|convergence.*not achieved/i,
+  cause:"Force or displacement residuals never dropped below tolerance within the allowed equilibrium iterations.",
+  fixes:[
+    "Turn on the Newton–Raphson residual plot (<code>NLDIAG,NRRE,ON</code>) and look at where the residual concentrates — that region is the problem.",
+    "Increase substeps rather than iterations: a smaller load step converges far more reliably than more iterations at a big one.",
+    "Check contact status. Contact chattering between open and closed is the most common non-convergence cause in assemblies.",
+    "For plasticity, confirm the stress-strain curve has a positive tangent modulus everywhere — a perfectly flat curve near the end of the data will not converge.",
+    "Enable auto time stepping (<code>AUTOTS,ON</code>) and set a sensible minimum substep."
+  ]
+},
+{
+  solver:"ANSYS", sev:"low",
+  title:"Insufficient memory / solver out of memory",
+  pat:/insufficient memory|out of memory|not enough memory|memory allocation/i,
+  cause:"The direct sparse solver needs more RAM than is available, usually because the model is large or has many contact elements.",
+  fixes:[
+    "Switch from the direct sparse solver to the iterative PCG solver (<code>EQSLV,PCG</code>) — far lower memory for large solid models.",
+    "Reduce the model: use symmetry, replace fine solid regions with shells, and delete unnecessary contact pairs.",
+    "Use the out-of-core solver mode, accepting the disk I/O cost.",
+    "Reduce the number of extracted modes if this is a modal or harmonic run."
+  ]
+},
+{
+  solver:"LS-DYNA", sev:"high",
+  title:"Negative volume in element",
+  pat:/negative volume|neg.*volume in (brick|solid)|volume.*negative/i,
+  cause:"A solid element has inverted — its Jacobian became negative. In explicit analysis this terminates the run immediately. Nearly always a soft material under extreme compression with too coarse a mesh.",
+  fixes:[
+    "For foams and soft materials, use <code>*MAT_MODIFIED_HONEYCOMB</code> or a material with proper volumetric locking behaviour.",
+    "Refine the mesh in the crushing region — negative volume is a mesh resolution failure more often than a material one.",
+    "Switch to a fully integrated solid formulation (<code>ELFORM=2</code> or <code>-1</code>) which resists inversion better than the default.",
+    "Enable element erosion via <code>*MAT_ADD_EROSION</code> so failed elements are deleted before they invert.",
+    "As a last resort set <code>*CONTROL_SOLID</code> ESORT to automatically sort degenerate elements to tetrahedra."
+  ]
+},
+{
+  solver:"LS-DYNA", sev:"med",
+  title:"Out-of-range velocities / nodes with large velocity",
+  pat:/out-of-range velocit|out of range velocit|large velocit|velocity.*out of range/i,
+  cause:"Nodal velocities have exceeded a physical limit, meaning energy is being injected artificially — usually by a contact penalty stiffness that is far too high, or an unstable time step.",
+  fixes:[
+    "Check the time step. If it collapsed suddenly, one element is controlling it; find it in <code>d3hsp</code>.",
+    "Reduce the contact penalty scale factor (<code>SFS</code>/<code>SFM</code> on the contact card) to around 0.1 and re-run.",
+    "Check for initial penetrations in the contact definition — <code>d3hsp</code> lists them at initialisation.",
+    "Verify units. A density entered in kg/m³ in a mm-tonne-s model produces wave speeds a thousand times too high.",
+    "Inspect the energy balance in <code>glstat</code>: rising total energy means the model is gaining energy from somewhere it should not."
+  ]
+},
+{
+  solver:"LS-DYNA", sev:"med",
+  title:"Time step too small / mass scaling excessive",
+  pat:/time step.*too small|added mass|mass scaling|dt2ms/i,
+  cause:"The smallest element governs the explicit time step, so one bad element can make the run take days. Mass scaling fixes the runtime by adding non-physical mass — which corrupts the dynamics if overdone.",
+  fixes:[
+    "Find the controlling element in <code>d3hsp</code> and fix the mesh there rather than mass-scaling the whole model.",
+    "Keep total added mass under about 5% of the physical mass, and check <code>glstat</code> to confirm it.",
+    "Use selective mass scaling (<code>*CONTROL_TIMESTEP</code> with a negative <code>DT2MS</code>) so only the offending elements are scaled.",
+    "Avoid tiny elements at contact interfaces and sharp geometric features — defeature the CAD first."
+  ]
+},
+{
+  solver:"LS-DYNA", sev:"low",
+  title:"Error termination / normal termination confusion",
+  pat:/error termination|normal termination|termination time/i,
+  cause:"'Normal termination' only means the solver reached the end time. It says nothing about whether the answer is physically meaningful.",
+  fixes:[
+    "Always check <code>glstat</code> after a normal termination: total energy should be roughly constant and hourglass energy under 10% of internal energy.",
+    "Check that added mass from mass scaling stayed within your tolerance.",
+    "Confirm sliding interface energy is small and positive. Large negative values mean contact is doing work it should not.",
+    "An error termination message names the subroutine and usually the element or node — start there, not at the top of the file."
+  ]
+},
+{
+  solver:"General", sev:"high",
+  title:"Results look plausible but are wrong by a factor of ~31.6",
+  pat:/factor of 31|units.*wrong|inconsistent unit|31\.6/i,
+  cause:"The square root of 1000. This is the signature of a density unit error in a mm-based model: using 7850 instead of 7.85e-9 for steel makes every natural frequency wrong by sqrt(1000) ≈ 31.6.",
+  fixes:[
+    "In SI(mm) — mm, tonne, s, MPa, N — steel is E = 210000, density = 7.85e-9.",
+    "In SI(m) — m, kg, s, Pa, N — steel is E = 2.1e11, density = 7850.",
+    "Never mix. Pick one system at the start of the project and write it in the model description.",
+    "Sanity check: a 1 m × 1 m × 5 mm simply supported steel plate has a fundamental frequency near 24 Hz. If yours is 760 Hz, you have this bug."
+  ]
+},
+{
+  solver:"General", sev:"med",
+  title:"Mesh has not been checked for convergence",
+  pat:/mesh convergence|grid independen|mesh sensitiv|mesh refinement/i,
+  cause:"Not an error message, but the most common reason a converged analysis is still wrong. A single mesh tells you nothing about accuracy.",
+  fixes:[
+    "Run at least three mesh densities with roughly a factor of two refinement between them.",
+    "Plot the quantity you actually care about (peak stress, first frequency) against element count and confirm it flattens.",
+    "Accept a mesh when the change between the last two refinements is below your required tolerance — typically 2–5%.",
+    "Stress converges much more slowly than displacement or frequency. A mesh converged for deflection may be far from converged for peak stress at a notch."
+  ]
+},
+{
+  solver:"General", sev:"med",
+  title:"Singular stress at a re-entrant corner",
+  pat:/stress singularit|sharp corner|re-entrant|infinite stress|stress.*keeps increasing/i,
+  cause:"At a mathematically sharp internal corner the elastic stress is genuinely infinite. Refining the mesh makes the reported stress rise without limit — the model is behaving correctly and the question is wrong.",
+  fixes:[
+    "Add the real fillet radius. Every manufactured part has one.",
+    "If you cannot model the fillet, do not report peak stress there. Report a structural stress or use a notch-insensitive criterion.",
+    "For fatigue, use a hot-spot stress extrapolation method rather than the raw peak.",
+    "Never justify a design on a stress value that changes every time you refine the mesh."
+  ]
+}
+];
+
+var SAMPLES = [
+  {label:"Abaqus convergence", text:"***ERROR: TOO MANY ATTEMPTS MADE FOR THIS INCREMENT: ANALYSIS TERMINATED\n***NOTE: THE SOLUTION APPEARS TO BE DIVERGING"},
+  {label:"Zero pivot", text:"***WARNING: SOLVER PROBLEM. NUMERICAL SINGULARITY WHEN PROCESSING NODE PLATE-1.472 D.O.F. 4 RATIO = 3.14e+13."},
+  {label:"Negative volume", text:"*** Error 60021 (SOL+21) negative volume in brick element # 148372\n     cycle 61204 at time 3.4991E-03"},
+  {label:"Hourglass", text:"Warning: ALLAE is 18% of ALLIE at the end of the step. Hourglass energy appears excessive."},
+  {label:"ANSYS pivot", text:"*** WARNING *** There is at least 1 small equation solver pivot term (e.g. at the UY degree of freedom of node 8842)."}
+];
+
+/* =========================================================
+   SETUP ADVISOR
+   ========================================================= */
+var ADVICE = [
+{
+  id:"strength", title:"Will it break?",
+  blurb:"Static strength, stress and deflection under a steady load.",
+  rec:{
+    "Analysis":"Linear static first, always. Only add nonlinearity once the linear answer makes sense.",
+    "Solver":"ABAQUS/Standard or ANSYS Mechanical. Implicit, direct sparse solver.",
+    "Elements":"Second-order solids (C3D10 / SOLID187) for stress; shells (S4R / SHELL181) where thickness is under about a tenth of the span.",
+    "Mesh":"At least three elements through thickness in bending. Refine at fillets and holes, not everywhere.",
+    "Checks":"Reaction forces must equal applied load. Peak deflection under half the thickness, or you need geometric nonlinearity."
+  },
+  pitfalls:[
+    "Reporting peak stress at a sharp corner. That value is a mesh artefact and rises forever with refinement — model the real fillet.",
+    "Skipping mesh convergence. One mesh proves nothing; stress converges far more slowly than displacement.",
+    "Using yield stress as the allowable without a factor for the load case, material scatter and the analysis idealisation itself."
+  ]
+},
+{
+  id:"vibration", title:"How does it vibrate?",
+  blurb:"Natural frequencies, mode shapes, resonance avoidance.",
+  rec:{
+    "Analysis":"Modal extraction first. Then harmonic response only if you have a real forcing spectrum.",
+    "Solver":"Lanczos eigensolver in either code. ABAQUS <code>*FREQUENCY</code> or ANSYS <code>MODOPT,LANB</code>.",
+    "Elements":"Shells for plate and panel structures; solids only where the geometry is genuinely three-dimensional.",
+    "Mesh":"Six to ten elements per half-wavelength of the highest mode you care about. This is the rule that actually governs modal accuracy.",
+    "Checks":"Extract 1.5× the modes you need. Confirm effective modal mass sums to over 90% in each direction you excite."
+  },
+  pitfalls:[
+    "Forgetting density, or entering it in the wrong unit system — the classic factor-of-31.6 frequency error.",
+    "Applying a point force at the plate centre and wondering why antisymmetric modes never appear. They cannot be excited there.",
+    "Trusting a modal result without a mesh study. Higher modes need far finer meshes than the fundamental.",
+    "Ignoring pre-stress. A tensioned or pressurised structure has substantially different frequencies."
+  ]
+},
+{
+  id:"impact", title:"What happens in a crash?",
+  blurb:"Short-duration impact, blast, drop, penetration.",
+  rec:{
+    "Analysis":"Explicit dynamics. Never attempt this implicitly.",
+    "Solver":"LS-DYNA or ABAQUS/Explicit. Both are appropriate; LS-DYNA has the deeper material library for this.",
+    "Elements":"Reduced-integration solids and shells with hourglass control. Uniform element size matters more than absolute size.",
+    "Mesh":"Keep the smallest element as large as you can tolerate — it sets the time step and therefore the entire runtime.",
+    "Checks":"Energy balance in <code>glstat</code> or the history output. Total energy roughly constant, hourglass under 10%, added mass under 5%."
+  },
+  pitfalls:[
+    "Mass scaling the whole model to make it run overnight, then reporting the dynamics as physical.",
+    "Rate-independent material data in a rate-dependent event. Strain rate changes steel yield substantially at impact speeds.",
+    "One tiny element left from a CAD sliver silently controlling the time step for the entire model.",
+    "Calling a run successful because it reached normal termination, without checking the energy balance at all."
+  ]
+},
+{
+  id:"buckling", title:"Will it buckle?",
+  blurb:"Stability of columns, panels and thin-walled structures.",
+  rec:{
+    "Analysis":"Linear eigenvalue buckling for a first estimate, then nonlinear post-buckling with imperfections for anything you will certify.",
+    "Solver":"ABAQUS <code>*BUCKLE</code> then Riks; ANSYS <code>ANTYPE,BUCKLE</code> with <code>PSTRES,ON</code>.",
+    "Elements":"Shells almost always. Buckling is a thin-structure phenomenon.",
+    "Mesh":"Fine enough to capture the buckling mode shape — at least eight elements per half-wave of the expected mode.",
+    "Checks":"Compare the first eigenvalue against a closed-form Euler or plate buckling estimate. It should be the same order."
+  },
+  pitfalls:[
+    "Treating the linear eigenvalue as the real buckling load. It is an upper bound and real structures fail well below it.",
+    "Omitting geometric imperfections. A perfect cylinder buckles at several times the load of a real one.",
+    "Missing that the structure yields before it buckles — always check the stress at the critical load too."
+  ]
+},
+{
+  id:"fatigue", title:"How long will it last?",
+  blurb:"Fatigue life, durability, crack growth.",
+  rec:{
+    "Analysis":"Linear static unit-load cases, then superpose them against the load history in a fatigue post-processor.",
+    "Solver":"FE for stresses; fe-safe, nCode or a hand S-N calculation for life. Do not attempt cycle-by-cycle FE.",
+    "Elements":"Second-order solids at the critical location. Fatigue is entirely driven by local stress accuracy.",
+    "Mesh":"Very fine at notches and welds. This is the one case where mesh refinement at the hot spot genuinely matters most.",
+    "Checks":"Mesh convergence on the hot-spot stress specifically, not on global displacement."
+  },
+  pitfalls:[
+    "Using raw peak FE stress at a weld toe. Use a hot-spot or structural stress method — the raw value is mesh-dependent.",
+    "Ignoring mean stress effects. A Goodman or Haigh correction usually changes life by an order of magnitude.",
+    "Assuming the surface finish and residual stress of the test coupon apply to the real manufactured part."
+  ]
+},
+{
+  id:"acoustics", title:"How much noise does it make?",
+  blurb:"Vibroacoustics, sound radiation, NVH.",
+  rec:{
+    "Analysis":"Modal analysis, then forced response, then acoustic radiation. Three sequential steps — do not skip to the third.",
+    "Solver":"FE for the structure; Rayleigh integral or elemental radiator for a baffled panel; BEM for arbitrary geometry.",
+    "Elements":"Shells for panels. The structural mesh must resolve the structural wavelength, which is shorter than the acoustic one below coincidence.",
+    "Mesh":"Six elements per structural half-wavelength at the top frequency of interest. This usually governs, not the acoustic mesh.",
+    "Checks":"Compute the critical (coincidence) frequency first — it tells you where radiation efficiency changes character."
+  },
+  pitfalls:[
+    "Meshing for the acoustic wavelength and forgetting the structural wavelength is much shorter below coincidence.",
+    "Guessing the damping ratio. Radiated power scales directly with it — measure it if the answer matters.",
+    "Ignoring fluid loading. For a light panel in water the added mass shifts every frequency substantially.",
+    "Using a centred point force, which excites only symmetric modes and understates radiated power."
+  ]
+}
+];
+
+/* =========================================================
+   RENDERING — builder
+   ========================================================= */
+function renderSegs(){
+  var sv=el("solverSeg"); sv.innerHTML="";
+  SOLVERS.forEach(function(s){
+    var b=document.createElement("button");
+    b.className="segbtn"; b.type="button";
+    b.setAttribute("aria-pressed", S.solver===s.id ? "true":"false");
+    b.innerHTML = esc(s.name) + "<small>" + esc(s.sub) + "</small>";
+    b.onclick=function(){
+      S.solver=s.id;
+      if(!supported(S.solver,S.analysis)){
+        var first=ANALYSES.filter(function(a){return a.solvers.indexOf(S.solver)>=0;})[0];
+        if(first) S.analysis=first.id;
+      }
+      refresh();
+    };
+    sv.appendChild(b);
+  });
+
+  var an=el("analysisSeg"); an.innerHTML="";
+  ANALYSES.forEach(function(a){
+    var ok=a.solvers.indexOf(S.solver)>=0;
+    var b=document.createElement("button");
+    b.className="segbtn"; b.type="button"; b.disabled=!ok;
+    b.setAttribute("aria-pressed", S.analysis===a.id ? "true":"false");
+    b.innerHTML = esc(a.name) + "<small>" + esc(a.sub) + "</small>";
+    if(!ok) b.title = a.name + " is not offered for " + S.solver.toUpperCase() + " in this version.";
+    b.onclick=function(){ S.analysis=a.id; refresh(); };
+    an.appendChild(b);
+  });
+
+  var bc=el("bcSeg"); bc.innerHTML="";
+  BCS.forEach(function(c){
+    var b=document.createElement("button");
+    b.className="segbtn"; b.type="button";
+    b.setAttribute("aria-pressed", S.bc===c.id ? "true":"false");
+    b.innerHTML = esc(c.name) + "<small>" + esc(c.sub) + "</small>";
+    b.onclick=function(){ S.bc=c.id; refresh(); };
+    bc.appendChild(b);
+  });
+}
+
+function toggleFields(){
+  var A=S.analysis;
+  function show(id,on){ var e=el(id); if(e) e.style.display = on ? "" : "none"; }
+  show("wrapModes", A==="modal"||A==="buckling");
+  show("wrapPress", A==="static"||A==="buckling");
+  show("wrapForce", A==="harmonic"||A==="vibac");
+  show("wrapF1",    A==="harmonic"||A==="vibac");
+  show("wrapF2",    A==="harmonic"||A==="vibac");
+  show("wrapVel",   A==="explicit");
+  show("wrapTime",  A==="explicit");
+  show("wrapDamp",  A==="harmonic"||A==="vibac");
+  el("inSeed").parentNode.style.display = (S.solver==="matlab") ? "none" : "";
+}
+
+function refresh(){
+  renderSegs();
+  toggleFields();
+  el("analysisHint").textContent = ANALYSIS_HINT[S.analysis] || "";
+
+  // thin plate warning
+  var ratio = S.h / Math.min(S.L, S.W);
+  var th=el("thinHint");
+  if(ratio > 0.05){
+    th.innerHTML = "<b style='color:var(--warn)'>h/L = " + ratio.toFixed(3) + "</b> — this is a thick plate. Thin-plate (Kirchhoff) theory overpredicts frequencies here; shear deformation matters. The FE shell scripts handle it, the MATLAB analytical solution does not.";
+  } else {
+    th.textContent = "h/L = " + ratio.toFixed(4) + " — thin-plate assumptions hold.";
+  }
+
+  // mesh guidance
+  var nel = Math.round(S.L/S.seed) * Math.round(S.W/S.seed);
+  var mh = el("meshHint");
+  if(S.solver==="matlab"){
+    mh.textContent = "Analytical solution — no mesh required.";
+  } else if(nel < 100){
+    mh.innerHTML = "≈ <b style='color:var(--warn)'>" + nel + " elements</b>. Too coarse for anything but a first look — mode shapes above the third will be poor.";
+  } else if(nel > 40000){
+    mh.innerHTML = "≈ <b style='color:var(--warn)'>" + nel.toLocaleString() + " elements</b>. Heavy for a flat plate. Confirm you need this before you wait for it.";
+  } else {
+    mh.innerHTML = "≈ <b>" + nel.toLocaleString() + " elements</b>. Reasonable. Always confirm with a refinement study.";
+  }
+
+  var src = generate();
+  var sv = SOLVERS.filter(function(x){return x.id===S.solver;})[0];
+  if(src===null){
+    el("codeOut").innerHTML = '<span class="tk-c">' + esc("# " + ANALYSES.filter(function(a){return a.id===S.analysis;})[0].name +
+      " is not available for " + sv.name + " in this version.\n# Pick another solver, or another analysis type.") + '</span>';
+    el("fileName").textContent = "—";
+    el("runCmd").textContent = "—";
+    return;
+  }
+  el("codeOut").innerHTML = highlight(src, sv.lang);
+  el("fileName").textContent = fileNameFor();
+  el("runCmd").textContent = runCmdFor();
+}
+
+/* =========================================================
+   RENDERING — error doctor
+   ========================================================= */
+function runDiagnosis(){
+  var txt = el("errIn").value.trim();
+  var out = el("diagOut");
+  if(!txt){
+    out.innerHTML = '<div class="empty"><h3>Nothing to diagnose yet</h3><p>Paste a solver message on the left, or try one of the sample errors to see how it works.</p></div>';
+    return;
+  }
+  var hits = ERRORS.filter(function(e){ return e.pat.test(txt); });
+  if(!hits.length){
+    out.innerHTML = '<div class="empty"><h3>No match in the knowledge base</h3><p>This tool only reports errors it actually recognises — it will not invent a cause. Check the first <code>***ERROR</code> line in your .dat or d3hsp file, which is usually more specific than the summary line.</p></div>';
+    return;
+  }
+  var sevRank={high:0,med:1,low:2};
+  hits.sort(function(a,b){return sevRank[a.sev]-sevRank[b.sev];});
+  out.innerHTML = '<div class="diag-list">' + hits.map(function(e){
+    return '<div class="card diag sev-' + e.sev + '">' +
+      '<div class="diag-head">' +
+        '<div class="diag-title">' + esc(e.title) + '</div>' +
+        '<span class="pill pill-solver">' + esc(e.solver) + '</span>' +
+        '<span class="pill pill-' + e.sev + '">' + (e.sev==="high"?"Blocking":e.sev==="med"?"Suspect":"Advisory") + '</span>' +
+      '</div>' +
+      '<p class="diag-cause">' + e.cause + '</p>' +
+      '<span class="label">Work through in this order</span>' +
+      '<ol class="fixes">' + e.fixes.map(function(f){return '<li><span>' + f + '</span></li>';}).join("") + '</ol>' +
+    '</div>';
+  }).join("") + '</div>';
+}
+
+/* =========================================================
+   RENDERING — advisor
+   ========================================================= */
+var advSel=null;
+function renderAdvisor(){
+  var g=el("advGrid"); g.innerHTML="";
+  ADVICE.forEach(function(a){
+    var b=document.createElement("button");
+    b.className="advcard"; b.type="button";
+    b.setAttribute("aria-pressed", advSel===a.id ? "true":"false");
+    b.innerHTML = "<h4>" + esc(a.title) + "</h4><p>" + esc(a.blurb) + "</p>";
+    b.onclick=function(){ advSel = (advSel===a.id) ? null : a.id; renderAdvisor(); };
+    g.appendChild(b);
+  });
+  var out=el("advOut");
+  if(!advSel){ out.innerHTML=""; return; }
+  var a=ADVICE.filter(function(x){return x.id===advSel;})[0];
+  var rows=Object.keys(a.rec).map(function(k){
+    return '<div class="rec"><div class="rec-k">' + esc(k) + '</div><div class="rec-v">' + a.rec[k] + '</div></div>';
+  }).join("");
+  out.innerHTML = '<div class="card adv-body"><h3>' + esc(a.title) + '</h3>' + rows +
+    '<div class="pitfalls"><span class="label">What usually goes wrong</span><ul>' +
+    a.pitfalls.map(function(p){return "<li>" + esc(p) + "</li>";}).join("") + '</ul></div></div>';
+}
+
+/* =========================================================
+   RENDERING — materials
+   ========================================================= */
+function renderMaterials(){
+  el("matBody").innerHTML = MATERIALS.map(function(m){
+    return "<tr><td class='nm'>" + esc(m.name) + "</td>" +
+      "<td class='mono'>" + m.E + "</td>" +
+      "<td class='mono'>" + m.nu + "</td>" +
+      "<td class='mono'>" + m.rho + "</td>" +
+      "<td class='mono'>" + (m.sy===null ? "—" : m.sy) + "</td>" +
+      "<td>" + esc(m.cls) + "</td></tr>";
+  }).join("");
+  var sel=el("matSel");
+  sel.innerHTML = MATERIALS.map(function(m){
+    return "<option value='" + m.id + "'>" + esc(m.name) + "</option>";
+  }).join("");
+  sel.value="steel";
+}
+
+/* =========================================================
+   WIRING
+   ========================================================= */
+function bindNum(id, key){
+  var e=el(id); if(!e) return;
+  e.addEventListener("input", function(){
+    var v=parseFloat(e.value);
+    if(!isNaN(v)) { S[key]=v; refresh(); }
+  });
+}
+["inL:L","inW:W","inH:h","inE:E","inNu:nu","inRho:rho","inSeed:seed","inModes:modes",
+ "inPress:press","inForce:force","inF1:f1","inF2:f2","inVel:vel","inTime:time","inDamp:damp"
+].forEach(function(p){ var a=p.split(":"); bindNum(a[0],a[1]); });
+
+el("matSel").addEventListener("change", function(){
+  var m=MATERIALS.filter(function(x){return x.id===this.value;}.bind(this))[0];
+  if(!m) return;
+  S.E=m.E; S.nu=m.nu; S.rho=m.rho;
+  el("inE").value=m.E; el("inNu").value=m.nu; el("inRho").value=m.rho;
+  refresh();
+});
+
+// tabs
+Array.prototype.forEach.call(document.querySelectorAll(".tab"), function(t){
+  t.addEventListener("click", function(){
+    Array.prototype.forEach.call(document.querySelectorAll(".tab"), function(x){ x.setAttribute("aria-selected","false"); });
+    t.setAttribute("aria-selected","true");
+    Array.prototype.forEach.call(document.querySelectorAll(".panel"), function(p){ p.hidden = true; });
+    el(t.dataset.panel).hidden = false;
+  });
+});
+
+// copy
+el("btnCopy").addEventListener("click", function(){
+  var src = generate();
+  if(src===null) return;
+  var btn=this;
+  function done(ok){
+    btn.textContent = ok ? "Copied" : "Press Ctrl+C";
+    setTimeout(function(){ btn.textContent="Copy"; }, 1600);
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(src).then(function(){done(true);}, function(){done(false);});
+  } else {
+    var ta=document.createElement("textarea");
+    ta.value=src; ta.style.position="fixed"; ta.style.opacity="0";
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand("copy"); done(true); }catch(e){ done(false); }
+    document.body.removeChild(ta);
+  }
+});
+
+// samples
+el("samples").innerHTML = SAMPLES.map(function(s,i){
+  return '<button class="sample" data-i="' + i + '" type="button">' + esc(s.label) + '</button>';
+}).join("");
+el("samples").addEventListener("click", function(ev){
+  var b=ev.target.closest(".sample"); if(!b) return;
+  el("errIn").value = SAMPLES[+b.dataset.i].text;
+  runDiagnosis();
+});
+el("errIn").addEventListener("input", runDiagnosis);
+
+/* ---- downloads capability (progressive enhancement) ---- */
+(function(){
+  if(!window.claude || !window.claude.use) return;
+  window.claude.use("downloads").then(function(dl){
+    if(!dl) return;
+    var btn = el("btnSave");
+    btn.hidden = false;
+    btn.addEventListener("click", function(){
+      var src = generate();
+      if(src===null) return;
+      // Solver extensions are not on the save allowlist, so the file is
+      // handed over as .txt — rename it after saving.
+      var fname = fileNameFor().replace(/\.[^.]+$/, "") + ".txt";
+      btn.textContent = "Saving...";
+      dl.save({filename:fname, data:src}).then(function(){
+        btn.textContent = "Saved";
+        setTimeout(function(){ btn.textContent="Save .txt"; }, 1800);
+      }, function(err){
+        btn.textContent = (err && err.code==="declined") ? "Save .txt" : "Unavailable";
+        setTimeout(function(){ btn.textContent="Save .txt"; }, 1800);
+      });
+    });
+  }, function(){ /* absent: copy button remains the path */ });
+})();
+
+/* ---- boot ---- */
+renderMaterials();
+refresh();
+runDiagnosis();
+renderAdvisor();
+
+})();
+</script>
+</body>
+</html>

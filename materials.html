@@ -1,0 +1,2927 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Graded and Layered Plates</title>
+<meta name="description" content="Free browser tool for structural CAE: generates runnable ABAQUS, ANSYS, LS-DYNA and MATLAB scripts, diagnoses solver errors, and analyses functionally graded, laminated and sandwich plates.">
+<meta name="author" content="Dr. Baij Nath Singh">
+
+<style>
+:root{color-scheme:light dark}
+html,body{margin:0}
+body{font:14px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#fff}
+img{max-width:100%}
+[hidden]{display:none!important}
+.site-nav{font-family:system-ui,sans-serif;font-size:13px;display:flex;gap:14px;align-items:center;margin-left:18px;flex-shrink:0}
+.site-nav a{color:#0A6FB5;text-decoration:none;white-space:nowrap;border-bottom:1px solid transparent;padding-bottom:1px}
+.site-nav a:hover{border-bottom-color:currentColor}
+@media (prefers-color-scheme:dark){.site-nav a{color:#48A6E4}}
+</style>
+</head>
+<body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+
+<style>
+  :root{
+    --ground:#F2F5F7; --surface:#FFFFFF; --surface-2:#F7F9FB; --surface-3:#EDF1F4;
+    --ink:#0E1822; --ink-soft:#51606D; --ink-faint:#7B8998;
+    --rule:#D8E0E7; --rule-soft:#E8EDF1;
+    --accent:#0A6FB5; --accent-ink:#FFFFFF; --accent-soft:#E4F0F9;
+    --ok:#17794A; --ok-soft:#E2F3EA;
+    --warn:#9A5B00; --warn-soft:#FBEFDC;
+    --err:#B5342A; --err-soft:#FBE8E6;
+    --s1:#0A6FB5; --s2:#C1671A;
+    --seq1:#9CC9E6; --seq2:#3E92C9; --seq3:#0A5484;
+    --code-bg:#101A22; --code-ink:#DCE5EC; --code-comment:#6F8494;
+    --code-str:#8FD07A; --code-num:#F0B36B; --code-kw:#6FB8F0;
+    --shadow:0 1px 2px rgba(14,24,34,.06), 0 10px 26px -20px rgba(14,24,34,.4);
+    --ui:"Barlow","Helvetica Neue",Arial,sans-serif;
+    --cond:"Barlow Condensed","Barlow",sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --ground:#0A0F14; --surface:#121A21; --surface-2:#161F27; --surface-3:#1C262F;
+      --ink:#E3EAF0; --ink-soft:#94A4B3; --ink-faint:#71828F;
+      --rule:#25313B; --rule-soft:#1D262E;
+      --accent:#48A6E4; --accent-ink:#06202F; --accent-soft:#12293A;
+      --ok:#4FBF88; --ok-soft:#10271D;
+      --warn:#E0A353; --warn-soft:#2A2013;
+      --err:#EE7B70; --err-soft:#2E1917;
+      --s1:#2E8FD0; --s2:#C47A2E;
+      --seq1:#1D3F57; --seq2:#2E7CB0; --seq3:#71B8E6;
+      --code-bg:#0A1218; --code-ink:#D3DDE5;
+      --shadow:0 1px 2px rgba(0,0,0,.5), 0 12px 30px -22px rgba(0,0,0,1);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0A0F14; --surface:#121A21; --surface-2:#161F27; --surface-3:#1C262F;
+    --ink:#E3EAF0; --ink-soft:#94A4B3; --ink-faint:#71828F;
+    --rule:#25313B; --rule-soft:#1D262E;
+    --accent:#48A6E4; --accent-ink:#06202F; --accent-soft:#12293A;
+    --ok:#4FBF88; --ok-soft:#10271D;
+    --warn:#E0A353; --warn-soft:#2A2013;
+    --err:#EE7B70; --err-soft:#2E1917;
+    --s1:#2E8FD0; --s2:#C47A2E;
+    --seq1:#1D3F57; --seq2:#2E7CB0; --seq3:#71B8E6;
+    --code-bg:#0A1218; --code-ink:#D3DDE5;
+    --shadow:0 1px 2px rgba(0,0,0,.5), 0 12px 30px -22px rgba(0,0,0,1);
+  }
+
+  *{box-sizing:border-box;}
+  body{background:var(--ground);color:var(--ink);font-family:var(--ui);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;}
+  h1,h2,h3,h4{margin:0;}
+  button{font-family:inherit;}
+
+  .topbar{position:sticky;top:0;z-index:40;background:var(--surface);border-bottom:1px solid var(--rule);}
+  .topbar-inner{max-width:1320px;margin:0 auto;padding:0 20px;display:flex;align-items:center;gap:22px;height:58px;}
+  .brand{display:flex;align-items:center;gap:11px;flex-shrink:0;}
+  .spectrum{width:26px;height:26px;border-radius:5px;flex-shrink:0;
+    background:linear-gradient(150deg,#2B3E9E 0%,#0F86C8 26%,#25B08A 48%,#D6C43F 70%,#D9702F 86%,#B32A22 100%);}
+  .brand-name{font-family:var(--cond);font-weight:700;font-size:22px;line-height:1;}
+  .brand-name span{color:var(--accent);}
+  .brand-tag{font-family:var(--mono);font-size:10px;color:var(--ink-faint);letter-spacing:.06em;text-transform:uppercase;margin-top:2px;}
+  .tabs{display:flex;gap:2px;margin-left:auto;overflow-x:auto;}
+  .tab{background:none;border:0;cursor:pointer;padding:9px 15px;border-radius:6px;
+    font-family:var(--cond);font-weight:600;font-size:16px;color:var(--ink-soft);white-space:nowrap;transition:background .12s,color .12s;}
+  .tab:hover{background:var(--surface-3);color:var(--ink);}
+  .tab[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);}
+  .tab:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+
+  .shell{max-width:1320px;margin:0 auto;padding:24px 20px 80px;}
+  .panel[hidden]{display:none !important;}
+  .lede{color:var(--ink-soft);max-width:82ch;margin:0 0 22px;font-size:15.5px;}
+  .lede strong{color:var(--ink);font-weight:600;}
+
+  .label{font-family:var(--mono);font-size:9.5px;font-weight:500;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--ink-faint);display:block;margin-bottom:7px;}
+  .card{background:var(--surface);border:1px solid var(--rule);border-radius:8px;box-shadow:var(--shadow);}
+  .fieldset{padding:16px 18px 18px;}
+  .fs-title{font-family:var(--cond);font-weight:700;font-size:15px;letter-spacing:.04em;text-transform:uppercase;
+    margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+  .fs-title::after{content:"";flex:1;height:1px;background:var(--rule-soft);}
+
+  .layout{display:grid;grid-template-columns:minmax(300px,360px) minmax(0,1fr) minmax(320px,430px);gap:18px;align-items:start;}
+  .col{display:flex;flex-direction:column;gap:14px;min-width:0;}
+  .col-code{position:sticky;top:82px;}
+
+  .seg{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;}
+  .seg-3{grid-template-columns:repeat(3,1fr);}
+  .segbtn{border:1px solid var(--rule);background:var(--surface-2);color:var(--ink-soft);
+    border-radius:6px;padding:9px 8px;cursor:pointer;font-size:13px;font-weight:500;text-align:center;transition:all .12s;line-height:1.25;}
+  .segbtn:hover:not(:disabled){border-color:var(--accent);color:var(--ink);}
+  .segbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600;}
+  .segbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .segbtn small{display:block;font-family:var(--mono);font-size:9px;letter-spacing:.05em;opacity:.72;margin-top:2px;text-transform:uppercase;}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;}
+  .field{display:flex;flex-direction:column;min-width:0;}
+  input[type="number"],input[type="text"],select{width:100%;background:var(--surface-2);border:1px solid var(--rule);
+    border-radius:5px;padding:8px 10px;color:var(--ink);font-family:var(--mono);font-size:13px;}
+  select{font-family:var(--ui);font-size:13.5px;}
+  input:focus,select:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:var(--accent);}
+  .hint{font-size:12px;color:var(--ink-faint);margin-top:8px;line-height:1.45;}
+  .hint b{color:var(--warn);}
+
+  /* results */
+  .res{padding:18px 20px 20px;}
+  .res-h{font-family:var(--cond);font-weight:700;font-size:17px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:14px;}
+  .kv{display:grid;grid-template-columns:1fr auto;gap:10px;padding:9px 0;border-bottom:1px solid var(--rule-soft);align-items:baseline;font-size:14px;}
+  .kv:last-child{border-bottom:0;}
+  .kv .k{color:var(--ink-soft);}
+  .kv .k small{display:block;font-size:11.5px;color:var(--ink-faint);}
+  .kv .v{font-family:var(--mono);font-size:13.5px;font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:500;}
+  .kv .v.hi{color:var(--accent);font-weight:600;font-size:15px;}
+  .kv-wide{grid-template-columns:1fr;gap:5px;}
+  .kv-wide .v{white-space:normal;font-size:12.5px;line-height:1.5;color:var(--ink-soft);}
+
+  .hero-num{display:flex;align-items:baseline;gap:10px;padding:14px 0 6px;}
+  .hero-num .n{font-family:var(--cond);font-size:38px;font-weight:700;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums;}
+  .hero-num .u{font-family:var(--mono);font-size:13px;color:var(--ink-soft);}
+  .hero-cap{font-size:12.5px;color:var(--ink-faint);margin-bottom:6px;}
+
+  /* chart */
+  .chart-card{padding:18px 20px 14px;}
+  .chart-head{display:flex;justify-content:space-between;align-items:baseline;gap:14px;margin-bottom:4px;flex-wrap:wrap;}
+  .chart-title{font-family:var(--cond);font-weight:700;font-size:17px;text-transform:uppercase;letter-spacing:.04em;}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;}
+  .lg{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-soft);}
+  .lg i{width:14px;height:3px;border-radius:2px;display:block;}
+  svg.plot{width:100%;height:auto;display:block;overflow:visible;}
+  .ax-line{stroke:var(--rule);stroke-width:1;}
+  .grid-line{stroke:var(--rule-soft);stroke-width:1;}
+  .ax-txt{font-family:var(--mono);font-size:9.5px;fill:var(--ink-faint);}
+  .ax-lab{font-family:var(--mono);font-size:9.5px;fill:var(--ink-faint);letter-spacing:.1em;text-transform:uppercase;}
+  .dl{font-family:var(--mono);font-size:10.5px;font-weight:500;}
+  .ns-line{stroke:var(--ok);stroke-width:1.5;stroke-dasharray:5 3;}
+  .ns-txt{font-family:var(--mono);font-size:9.5px;fill:var(--ok);}
+
+  /* stack viz */
+  .stackviz{display:flex;flex-direction:column;gap:2px;margin-top:4px;}
+  .ply{display:grid;grid-template-columns:34px 1fr 56px;gap:10px;align-items:center;font-size:12px;}
+  .ply .bar{height:15px;border-radius:2px;}
+  .ply .ang{font-family:var(--mono);font-size:11px;color:var(--ink-soft);text-align:right;}
+  .ply .thk{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);}
+
+  /* matrix */
+  .mat-wrap{overflow-x:auto;margin-top:4px;}
+  table.mtx{border-collapse:collapse;font-family:var(--mono);font-size:11.5px;font-variant-numeric:tabular-nums;}
+  table.mtx td{padding:5px 9px;text-align:right;border:1px solid var(--rule-soft);white-space:nowrap;}
+  table.mtx td.zero{color:var(--ink-faint);}
+  table.mtx td.nz{color:var(--warn);font-weight:500;}
+  .mtx-name{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin:12px 0 5px;}
+
+  /* flags */
+  .flags{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
+  .flag{display:grid;grid-template-columns:auto 1fr;gap:10px;font-size:13px;line-height:1.45;padding:9px 12px;border-radius:5px;align-items:start;}
+  .flag b{font-weight:600;}
+  .flag-ok{background:var(--ok-soft);color:var(--ok);}
+  .flag-warn{background:var(--warn-soft);color:var(--warn);}
+  .flag-err{background:var(--err-soft);color:var(--err);}
+  .flag .ico{font-family:var(--mono);font-weight:600;font-size:12px;}
+
+  /* code */
+  .code-card{background:var(--code-bg);border:1px solid var(--rule);border-radius:8px;overflow:hidden;box-shadow:var(--shadow);}
+  .code-head{display:flex;align-items:center;gap:9px;padding:11px 14px;background:rgba(255,255,255,.035);border-bottom:1px solid rgba(255,255,255,.09);}
+  .code-file{font-family:var(--mono);font-size:12px;color:#9FB3C2;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .cbtn{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.14);color:#DDE7EE;border-radius:5px;
+    padding:5px 11px;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;}
+  .cbtn:hover{background:rgba(255,255,255,.17);}
+  .cbtn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600;}
+  .cbtn:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+  pre.code{margin:0;padding:15px 17px;overflow:auto;max-height:calc(100vh - 260px);
+    font-family:var(--mono);font-size:11.8px;line-height:1.62;color:var(--code-ink);white-space:pre;tab-size:4;}
+  .tk-c{color:var(--code-comment);font-style:italic;}
+  .tk-s{color:var(--code-str);}
+  .tk-n{color:var(--code-num);}
+  .tk-k{color:var(--code-kw);}
+
+  .notice{border-radius:7px;padding:12px 14px;font-size:13px;line-height:1.5;border:1px solid;}
+  .notice-info{background:var(--accent-soft);border-color:var(--accent);color:var(--ink);}
+  .notice b{font-weight:600;}
+
+  .foot{margin-top:40px;padding-top:18px;border-top:1px solid var(--rule);font-size:12.5px;color:var(--ink-faint);line-height:1.65;max-width:88ch;}
+  .foot b{color:var(--ink-soft);}
+
+  @media (max-width:1180px){
+    .layout{grid-template-columns:minmax(280px,340px) 1fr;}
+    .col-code{grid-column:1/-1;position:static;}
+  }
+  @media (max-width:760px){
+    .layout{grid-template-columns:1fr;}
+    .topbar-inner{height:auto;flex-wrap:wrap;padding:10px 14px;gap:10px;}
+    .tabs{margin-left:0;width:100%;}
+    .shell{padding:18px 14px 60px;}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none !important;}}
+</style>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="spectrum" aria-hidden="true"></div>
+      <div>
+        <div class="brand-name">CAE <span>Copilot</span></div>
+        <div class="brand-tag">Materials module</div>
+      </div>
+    </div>
+    <div class="site-nav"><a href="index.html">← Home</a><a href="copilot.html">Script builder</a></div>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" data-panel="p-fgm">Functionally Graded</button>
+      <button class="tab" role="tab" aria-selected="false" data-panel="p-lam">Composite Laminate</button>
+      <button class="tab" role="tab" aria-selected="false" data-panel="p-sand">Sandwich Panel</button>
+      <button class="tab" role="tab" aria-selected="false" data-panel="p-sweep">Parametric Study</button>
+    </div>
+  </div>
+</div>
+
+<div class="shell">
+
+  <!-- ==================== FGM ==================== -->
+  <section class="panel" id="p-fgm" role="tabpanel">
+    <p class="lede">Through-thickness gradation with your choice of volume-fraction law and homogenization scheme. Because the stiffness distribution is asymmetric, the bending reference is the <strong>physical neutral surface</strong>, not the mid-plane — get that wrong and the coupling stiffness B never vanishes, which is the single most common error in FGM plate analysis.</p>
+
+    <div class="layout">
+      <div class="col">
+        <div class="card fieldset">
+          <div class="fs-title">Constituent phases</div>
+          <div class="field" style="margin-bottom:11px;">
+            <label class="label" for="fgCer">Phase A — top surface</label>
+            <select id="fgCer"></select>
+          </div>
+          <div class="field">
+            <label class="label" for="fgMet">Phase B — bottom surface</label>
+            <select id="fgMet"></select>
+          </div>
+          <p class="hint">Either position takes any phase, so ceramic–ceramic gradations work as well as the usual ceramic–metal.</p>
+        </div>
+
+        <div class="card fieldset">
+          <div class="fs-title">Phase pair</div>
+          <div id="fgPairMetrics"></div>
+          <p class="hint" id="fgPairHint"></p>
+        </div>
+
+        <div class="card fieldset">
+          <div class="fs-title">Gradation law</div>
+          <div class="seg seg-3" id="fgLawSeg"></div>
+          <div class="grid2" style="margin-top:12px;">
+            <div class="field" id="fgNwrap">
+              <label class="label" for="fgN">Index n</label>
+              <input type="number" id="fgN" value="1" step="0.2" min="0" max="100">
+            </div>
+            <div class="field">
+              <label class="label" for="fgLayers">Layers for FE</label>
+              <input type="number" id="fgLayers" value="20" step="1" min="2" max="100">
+            </div>
+          </div>
+          <p class="hint" id="fgLawHint"></p>
+        </div>
+
+        <div class="card fieldset">
+          <div class="fs-title">Homogenization</div>
+          <div class="seg seg-3" id="fgSchemeSeg"></div>
+          <p class="hint">Voigt is the stiff upper bound, Reuss the compliant lower bound. Mori&ndash;Tanaka assumes a matrix with dispersed inclusions and is the defensible default for a two-phase graded plate.</p>
+        </div>
+
+        <div class="card fieldset">
+          <div class="fs-title">Plate</div>
+          <div class="grid3">
+            <div class="field"><label class="label" for="fgA">a (m)</label><input type="number" id="fgA" value="1.0" step="0.05" min="0.001"></div>
+            <div class="field"><label class="label" for="fgB">b (m)</label><input type="number" id="fgB" value="1.0" step="0.05" min="0.001"></div>
+            <div class="field"><label class="label" for="fgH">h (m)</label><input type="number" id="fgH" value="0.01" step="0.001" min="0.0001"></div>
+          </div>
+          <p class="hint" id="fgThinHint"></p>
+        </div>
+
+        <div class="card fieldset">
+          <div class="fs-title">Boundary conditions</div>
+          <div class="seg" id="fgBcPresets" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px;"></div>
+          <div class="grid2">
+            <div class="field"><label class="label" for="fgEx0">Edge x = 0</label><select id="fgEx0"></select></div>
+            <div class="field"><label class="label" for="fgEx1">Edge x = a</label><select id="fgEx1"></select></div>
+            <div class="field"><label class="label" for="fgEy0">Edge y = 0</label><select id="fgEy0"></select></div>
+            <div class="field"><label class="label" for="fgEy1">Edge y = b</label><select id="fgEy1"></select></div>
+          </div>
+          <p class="hint" id="fgBcHint"></p>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="card chart-card">
+          <div class="chart-head">
+            <div class="chart-title">Through-thickness profile</div>
+            <div class="legend">
+              <span class="lg"><i style="background:var(--s1)"></i>E(z) / E<sub>c</sub></span>
+              <span class="lg"><i style="background:var(--s2)"></i>&rho;(z) / &rho;<sub>c</sub></span>
+            </div>
+          </div>
+          <svg class="plot" id="fgPlot" viewBox="0 0 460 330" role="img" aria-label="Normalised modulus and density through the plate thickness"></svg>
+        </div>
+
+        <div class="card res">
+          <div class="res-h">Effective stiffness</div>
+          <div class="hero-cap">Physical neutral surface, measured from mid-plane</div>
+          <div class="hero-num"><span class="n" id="fgZns">—</span><span class="u">&times; h</span></div>
+          <div class="kv"><span class="k">Extensional stiffness A<small>&int; E/(1&minus;&nu;²) dz</small></span><span class="v" id="fgA11">—</span></div>
+          <div class="kv"><span class="k">Bending stiffness D<small>about the neutral surface</small></span><span class="v" id="fgD11">—</span></div>
+          <div class="kv"><span class="k">Coupling B<small>zero by construction at z<sub>ns</sub></small></span><span class="v" id="fgB11">—</span></div>
+          <div class="kv"><span class="k">Mass per area I₀</span><span class="v" id="fgI0">—</span></div>
+          <div class="kv"><span class="k">Fundamental frequency f₁<small id="fgMethodNote">simply supported, thin-plate</small></span><span class="v hi" id="fgF1">—</span></div>
+          <div class="kv kv-wide"><span class="k">Modes 1–6 (Hz)</span><span class="v" id="fgF6">—</span></div>
+          <div class="flags" id="fgFlags"></div>
+        </div>
+
+        <div class="card res">
+          <div class="res-h">Scheme sensitivity</div>
+          <p class="hint" style="margin:0 0 12px;">The same plate, the same gradation, three homogenization assumptions. The spread is not numerical noise — it is a modelling choice you must state in any paper or report.</p>
+          <div id="fgSchemeTable"></div>
+        </div>
+      </div>
+
+      <div class="col col-code">
+        <div class="card fieldset">
+          <div class="fs-title">Generate for</div>
+          <div class="seg seg-3" id="fgSolverSeg"></div>
+        </div>
+        <div class="code-card">
+          <div class="code-head">
+            <span class="code-file" id="fgFile">fgm_plate.py</span>
+            <button class="cbtn primary" data-copy="fgm">Copy</button>
+            <button class="cbtn" data-save="fgm" hidden>Save</button>
+          </div>
+          <pre class="code"><code id="fgCode"></code></pre>
+        </div>
+        <div class="notice notice-info"><b>How FGM is actually modelled.</b> Neither ABAQUS nor ANSYS grades a property continuously through a shell. The standard approach — and what this generates — is to slice the thickness into layers, homogenize each one at its own mid-layer volume fraction, and build a composite section. More layers means a smoother gradation and a longer solve.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== LAMINATE ==================== -->
+  <section class="panel" id="p-lam" role="tabpanel" hidden>
+    <p class="lede">Classical lamination theory: the full <strong>ABD matrix</strong>, symmetry and balance diagnostics, and natural frequencies. The diagnostics matter more than the numbers — a laminate with non-zero B or D₁₆ behaves in ways the closed-form frequency formula cannot represent, and the tool tells you when that happens rather than quietly returning a wrong answer.</p>
+
+    <div class="layout">
+      <div class="col">
+        <div class="card fieldset">
+          <div class="fs-title">Stacking sequence</div>
+          <div class="field">
+            <label class="label" for="lamSeq">Notation</label>
+            <input type="text" id="lamSeq" value="[0/45/-45/90]s">
+          </div>
+          <p class="hint">Supports <code>[0/90]s</code>, <code>[0/&plusmn;45/90]s</code>, <code>[0/90]2s</code>. Suffix <code>s</code> mirrors the stack; a number repeats it.</p>
+          <div class="grid2" style="margin-top:12px;">
+            <div class="field"><label class="label" for="lamPly">Ply thickness (mm)</label><input type="number" id="lamPly" value="0.125" step="0.005" min="0.001"></div>
+            <div class="field"><label class="label">Total plies</label><input type="text" id="lamCount" value="—" readonly></div>
+          </div>
+        </div>
+
+        <div class="card fieldset">
+          <div class="fs-title">Ply material</div>
+          <div class="field" style="margin-bottom:11px;">
+            <label class="label" for="lamMat">Preset</label>
+            <select id="lamMat"></select>
+          </div>
+          <div class="grid2">
+            <div class="field"><label class="label" for="lamE1">E₁ (GPa)</label><input type="number" id="lamE1" value="138" step="1"></div>
+            <div class="field"><label class="label" for="lamE2">E₂ (GPa)</label><input type="number" id="lamE2" value="8.96" step="0.1"></div>
+            <div class="field"><label class="label" for="lamG12">G₁₂ (GPa)</label><input type="number" id="lamG12" value="7.1" step="0.1"></div>
+            <div class="field"><label class="label" for="lamNu">&nu;₁₂</label><input type="number" id="lamNu" value="0.3" step="0.01" min="0" max="0.6"></div>
+            <div class="field"><label class="label" for="lamRho">&rho; (kg/m³)</label><input type="number" id="lamRho" value="1600" step="10"></div>
+          </div>
+        </div>
+
+        <div class="card fieldset">
+          <div class="fs-title">Plate</div>
+          <div class="grid2">
+            <div class="field"><label class="label" for="lamA">a (m)</label><input type="number" id="lamA" value="1.0" step="0.05" min="0.001"></div>
+            <div class="field"><label class="label" for="lamB">b (m)</label><input type="number" id="lamB" value="1.0" step="0.05" min="0.001"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="card res">
+          <div class="res-h">Stack</div>
+          <div class="stackviz" id="lamStack"></div>
+        </div>
+
+        <div class="card res">
+          <div class="res-h">ABD matrix</div>
+          <div class="mat-wrap" id="lamABD"></div>
+          <div class="flags" id="lamFlags"></div>
+        </div>
+
+        <div class="card res">
+          <div class="res-h">Response</div>
+          <div class="kv"><span class="k">Laminate thickness</span><span class="v" id="lamH">—</span></div>
+          <div class="kv"><span class="k">Mass per area</span><span class="v" id="lamM">—</span></div>
+          <div class="kv"><span class="k">Effective E<sub>x</sub><small>membrane, from inverse of A</small></span><span class="v" id="lamEx">—</span></div>
+          <div class="kv"><span class="k">Effective E<sub>y</sub></span><span class="v" id="lamEy">—</span></div>
+          <div class="kv"><span class="k">Fundamental frequency f₁₁<small>SSSS, specially orthotropic form</small></span><span class="v hi" id="lamF1">—</span></div>
+          <div class="kv"><span class="k">First four frequencies</span><span class="v" id="lamF4">—</span></div>
+        </div>
+      </div>
+
+      <div class="col col-code">
+        <div class="card fieldset">
+          <div class="fs-title">Generate for</div>
+          <div class="seg seg-3" id="lamSolverSeg"></div>
+        </div>
+        <div class="code-card">
+          <div class="code-head">
+            <span class="code-file" id="lamFile">laminate.py</span>
+            <button class="cbtn primary" data-copy="lam">Copy</button>
+            <button class="cbtn" data-save="lam" hidden>Save</button>
+          </div>
+          <pre class="code"><code id="lamCode"></code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== SANDWICH ==================== -->
+  <section class="panel" id="p-sand" role="tabpanel" hidden>
+    <p class="lede">Face sheets on a light core. The thing that catches people: a sandwich panel is <strong>shear-dominated</strong>. The core is orders of magnitude softer than the faces, so classical thin-plate theory overpredicts stiffness and frequency — sometimes by tens of percent. Every result here carries the shear correction, and shows you what you would have got without it.</p>
+
+    <div class="layout">
+      <div class="col">
+        <div class="card fieldset">
+          <div class="fs-title">Face sheets</div>
+          <div class="field" style="margin-bottom:11px;">
+            <label class="label" for="swFaceMat">Material</label>
+            <select id="swFaceMat"></select>
+          </div>
+          <div class="grid3">
+            <div class="field"><label class="label" for="swEf">E (GPa)</label><input type="number" id="swEf" value="70" step="1"></div>
+            <div class="field"><label class="label" for="swNuf">&nu;</label><input type="number" id="swNuf" value="0.33" step="0.01"></div>
+            <div class="field"><label class="label" for="swTf">t (mm)</label><input type="number" id="swTf" value="0.5" step="0.1" min="0.01"></div>
+          </div>
+          <div class="grid2" style="margin-top:11px;">
+            <div class="field"><label class="label" for="swRhof">&rho; (kg/m³)</label><input type="number" id="swRhof" value="2700" step="10"></div>
+            <div class="field"><label class="label" for="swSyf">&sigma;<sub>y</sub> (MPa)</label><input type="number" id="swSyf" value="276" step="5"></div>
+          </div>
+        </div>
+
+        <div class="card fieldset">
+          <div class="fs-title">Core</div>
+          <div class="field" style="margin-bottom:11px;">
+            <label class="label" for="swCoreMat">Material</label>
+            <select id="swCoreMat"></select>
+          </div>
+          <div class="grid3">
+            <div class="field"><label class="label" for="swEc">E (MPa)</label><input type="number" id="swEc" value="200" step="10"></div>
+            <div class="field"><label class="label" for="swGc">G (MPa)</label><input type="number" id="swGc" value="50" step="5"></div>
+            <div class="field"><label class="label" for="swTc">t (mm)</label><input type="number" id="swTc" value="20" step="1" min="0.1"></div>
+          </div>
+          <div class="grid2" style="margin-top:11px;">
+            <div class="field"><label class="label" for="swRhoc">&rho; (kg/m³)</label><input type="number" id="swRhoc" value="60" step="5"></div>
+            <div class="field"><label class="label" for="swTauc">&tau;<sub>c</sub> (MPa)</label><input type="number" id="swTauc" value="0.9" step="0.1"></div>
+          </div>
+        </div>
+
+        <div class="card fieldset">
+          <div class="fs-title">Plate &amp; loading</div>
+          <div class="grid3">
+            <div class="field"><label class="label" for="swA">a (m)</label><input type="number" id="swA" value="1.0" step="0.05"></div>
+            <div class="field"><label class="label" for="swB">b (m)</label><input type="number" id="swB" value="0.6" step="0.05"></div>
+            <div class="field"><label class="label" for="swQ">q (Pa)</label><input type="number" id="swQ" value="2000" step="100"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="card res">
+          <div class="res-h">Section</div>
+          <div class="kv"><span class="k">Total thickness</span><span class="v" id="swH">—</span></div>
+          <div class="kv"><span class="k">Mass per area</span><span class="v" id="swM">—</span></div>
+          <div class="kv"><span class="k">Flexural rigidity D</span><span class="v" id="swD">—</span></div>
+          <div class="kv"><span class="k">Shear rigidity S<small>G<sub>c</sub>d²/t<sub>c</sub></small></span><span class="v" id="swS">—</span></div>
+          <div class="kv"><span class="k">Shear parameter Dk²/S<small>&gt; 0.1 means shear matters</small></span><span class="v" id="swR">—</span></div>
+        </div>
+
+        <div class="card res">
+          <div class="res-h">Frequency — with and without shear</div>
+          <div class="hero-cap">Fundamental frequency, shear-corrected</div>
+          <div class="hero-num"><span class="n" id="swF1">—</span><span class="u">Hz</span></div>
+          <div class="kv"><span class="k">Bending only (thin-plate)</span><span class="v" id="swFb">—</span></div>
+          <div class="kv"><span class="k">Error if you ignore shear</span><span class="v" id="swErr">—</span></div>
+          <div class="flags" id="swFlags"></div>
+        </div>
+
+        <div class="card res">
+          <div class="res-h">Failure margins</div>
+          <p class="hint" style="margin:0 0 12px;">Simply supported strip under uniform pressure q. Face wrinkling is the mode people forget — it is a local instability of the face on an elastic foundation and it can precede yielding by a wide margin.</p>
+          <div id="swFail"></div>
+        </div>
+      </div>
+
+      <div class="col col-code">
+        <div class="card fieldset">
+          <div class="fs-title">Generate for</div>
+          <div class="seg seg-3" id="swSolverSeg"></div>
+        </div>
+        <div class="code-card">
+          <div class="code-head">
+            <span class="code-file" id="swFile">sandwich.py</span>
+            <button class="cbtn primary" data-copy="sw">Copy</button>
+            <button class="cbtn" data-save="sw" hidden>Save</button>
+          </div>
+          <pre class="code"><code id="swCode"></code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== PARAMETRIC STUDY ==================== -->
+  <section class="panel" id="p-sweep" role="tabpanel" hidden>
+    <p class="lede">Sweep one design variable and watch what it does to the response. This is the step between a calculator and a research instrument: it answers <strong>"how does X affect Y"</strong> rather than "what is Y for this one case". Every run exports as CSV, so the numbers go straight into a paper, a report or your own plotting.</p>
+
+    <div class="layout">
+      <div class="col">
+        <div class="card fieldset">
+          <div class="fs-title">Study</div>
+          <div class="seg seg-3" id="swpTargetSeg"></div>
+          <p class="hint">Uses the model currently set up on that tab — change the material or plate there and re-run here.</p>
+        </div>
+
+        <div class="card fieldset">
+          <div class="fs-title">Variable</div>
+          <div class="field" style="margin-bottom:11px;">
+            <label class="label" for="swpVar">Sweep</label>
+            <select id="swpVar"></select>
+          </div>
+          <div class="grid3">
+            <div class="field"><label class="label" for="swpMin">From</label><input type="number" id="swpMin" value="0.1" step="0.1"></div>
+            <div class="field"><label class="label" for="swpMax">To</label><input type="number" id="swpMax" value="10" step="0.1"></div>
+            <div class="field"><label class="label" for="swpN">Steps</label><input type="number" id="swpN" value="25" step="1" min="3" max="200"></div>
+          </div>
+          <p class="hint" id="swpVarHint"></p>
+        </div>
+
+        <div class="card fieldset">
+          <div class="fs-title">Plot</div>
+          <div class="field">
+            <label class="label" for="swpOut">Response</label>
+            <select id="swpOut"></select>
+          </div>
+          <p class="hint">The chart shows one response at a time — plotting two quantities of different scale on one axis is how charts lie. Every response is in the table and the CSV.</p>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="card chart-card">
+          <div class="chart-head">
+            <div class="chart-title" id="swpTitle">Response</div>
+            <div class="legend"><span class="lg"><i style="background:var(--s1)"></i><span id="swpLegend">—</span></span></div>
+          </div>
+          <svg class="plot" id="swpPlot" viewBox="0 0 520 320" role="img" aria-label="Parametric sweep result"></svg>
+          <div id="swpStats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-top:14px;"></div>
+        </div>
+
+        <div class="card res">
+          <div class="res-h">Data</div>
+          <div class="table-wrap" style="max-height:340px;overflow:auto;">
+            <table class="mtx" id="swpTable" style="width:100%;min-width:420px;"></table>
+          </div>
+        </div>
+      </div>
+
+      <div class="col col-code">
+        <div class="card fieldset">
+          <div class="fs-title">Export</div>
+          <div style="display:flex;flex-direction:column;gap:9px;">
+            <button class="segbtn" type="button" id="swpCopyCsv" style="padding:11px;">Copy as CSV</button>
+            <button class="segbtn" type="button" id="swpSaveCsv" style="padding:11px;" hidden>Download .csv</button>
+            <button class="segbtn" type="button" id="swpCopyTex" style="padding:11px;">Copy as LaTeX table</button>
+          </div>
+          <p class="hint">CSV opens in Excel, Origin, MATLAB or pandas. The LaTeX table is <code>booktabs</code>-ready for a manuscript.</p>
+        </div>
+
+        <div class="notice notice-info"><b>What this is for.</b> A single number tells a reviewer nothing about whether your model behaves sensibly. A curve does — monotonic where it should be, converging where it should, with limits that match the homogeneous case. Sweep before you publish.</div>
+
+        <div class="card res">
+          <div class="res-h">Reading the curve</div>
+          <div id="swpRead" style="font-size:13.5px;color:var(--ink-soft);line-height:1.55;"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="foot">
+    <b>Validation.</b> The FGM routine returns the exact homogeneous plate rigidity at n = 0 and z<sub>ns</sub> = 0, and converges on the metal at large n. The laminate routine reproduces A₁₁ = Eh/(1&minus;&nu;²) and D₁₁ = Eh³/12(1&minus;&nu;²) for a single isotropic ply, gives B = 0 and D₁₆ = D₂₆ = 0 for symmetric cross-ply, and returns &lambda; = 19.7392 against the classical 19.739 for an isotropic square plate. Mori&ndash;Tanaka is bounded by Voigt above and Reuss below at every volume fraction. <b>These are limiting-case checks, not a substitute for validating against your own FE model</b> — which is what the generated scripts are for.
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ======================= MATERIAL LIBRARIES ======================= */
+/* Either position may hold any phase. An all-ceramic FGM is a different
+   regime from the usual metal-ceramic one — no plasticity, far higher
+   service temperature — and the tool must not assume ceramic-over-metal. */
+var CERAMICS=[
+  {id:"sic",   name:"Silicon carbide SiC",  E:410,  nu:0.14, rho:3210, cls:"Ceramic"},
+  {id:"b4c",   name:"Boron carbide B4C",    E:450,  nu:0.17, rho:2520, cls:"Ceramic"},
+  {id:"tic",   name:"Titanium carbide TiC", E:400,  nu:0.19, rho:4930, cls:"Ceramic"},
+  {id:"al2o3", name:"Alumina Al2O3",        E:380,  nu:0.22, rho:3950, cls:"Ceramic"},
+  {id:"aln",   name:"Aluminium nitride AlN",E:330,  nu:0.24, rho:3260, cls:"Ceramic"},
+  {id:"si3n4", name:"Silicon nitride Si3N4",E:310,  nu:0.27, rho:3200, cls:"Ceramic"},
+  {id:"spinel",name:"Spinel MgAl2O4",       E:270,  nu:0.26, rho:3580, cls:"Ceramic"},
+  {id:"zro2",  name:"Zirconia ZrO2 (YSZ)",  E:200,  nu:0.29, rho:5700, cls:"Ceramic"},
+  {id:"zircon",name:"Zircon ZrSiO4",        E:200,  nu:0.25, rho:4600, cls:"Ceramic"},
+  {id:"y2o3",  name:"Yttria Y2O3",          E:170,  nu:0.30, rho:5030, cls:"Ceramic"},
+  {id:"mullite",name:"Mullite",             E:150,  nu:0.25, rho:3050, cls:"Ceramic"},
+  {id:"cord",  name:"Cordierite",           E:140,  nu:0.31, rho:2600, cls:"Ceramic"},
+  {id:"silica",name:"Fused silica",         E:73,   nu:0.17, rho:2200, cls:"Ceramic"},
+  {id:"al",    name:"Aluminium",            E:70,   nu:0.30, rho:2702, cls:"Metal"},
+  {id:"ss304", name:"Stainless steel 304",  E:207.8,nu:0.32, rho:8166, cls:"Metal"},
+  {id:"ti64",  name:"Titanium Ti-6Al-4V",   E:105.7,nu:0.298,rho:4429, cls:"Metal"},
+  {id:"ni",    name:"Nickel",               E:205.1,nu:0.31, rho:8900, cls:"Metal"},
+  {id:"steel", name:"Structural steel",     E:210,  nu:0.30, rho:7850, cls:"Metal"}
+];
+var METALS=CERAMICS;   // both positions draw from the same list
+var PLIES=[
+  {id:"t300",  name:"T300/5208 carbon-epoxy",   E1:181,  E2:10.3, G12:7.17, nu:0.28, rho:1600},
+  {id:"as4",   name:"AS4/3501-6 carbon-epoxy",  E1:138,  E2:8.96, G12:7.1,  nu:0.30, rho:1600},
+  {id:"im7",   name:"IM7/8552 carbon-epoxy",    E1:161,  E2:11.4, G12:5.17, nu:0.32, rho:1570},
+  {id:"eglass",name:"E-glass/epoxy",            E1:38.6, E2:8.27, G12:4.14, nu:0.26, rho:1900},
+  {id:"kevlar",name:"Kevlar 49/epoxy",          E1:76,   E2:5.5,  G12:2.3,  nu:0.34, rho:1460},
+  {id:"boron", name:"Boron/epoxy",              E1:204,  E2:18.5, G12:5.59, nu:0.23, rho:2000}
+];
+var FACES=[
+  {id:"al2024", name:"Aluminium 2024-T3", E:73.1, nu:0.33, rho:2780, sy:345},
+  {id:"al6061", name:"Aluminium 6061-T6", E:68.9, nu:0.33, rho:2700, sy:276},
+  {id:"cfrp",   name:"CFRP quasi-iso",    E:70,   nu:0.31, rho:1600, sy:600},
+  {id:"gfrp",   name:"GFRP quasi-iso",    E:25,   nu:0.28, rho:1900, sy:300},
+  {id:"steel",  name:"Steel sheet",       E:210,  nu:0.30, rho:7850, sy:250}
+];
+var CORES=[
+  {id:"nomex",  name:"Nomex honeycomb 48 kg/m3", E:138, G:41,  rho:48,  tau:1.2},
+  {id:"alhc",   name:"Aluminium honeycomb 5052", E:500, G:310, rho:83,  tau:2.2},
+  {id:"pvc60",  name:"PVC foam H60",             E:70,  G:22,  rho:60,  tau:0.6},
+  {id:"pvc100", name:"PVC foam H100",            E:135, G:40,  rho:100, tau:1.4},
+  {id:"pmi",    name:"PMI foam Rohacell 71",     E:92,  G:29,  rho:75,  tau:1.3},
+  {id:"balsa",  name:"End-grain balsa",          E:2550,G:150, rho:150, tau:2.8}
+];
+
+var LAWS=[{id:"power",name:"Power",sub:"P-FGM"},{id:"sigmoid",name:"Sigmoid",sub:"S-FGM"},{id:"exp",name:"Exponential",sub:"E-FGM"}];
+var SCHEMES=[{id:"voigt",name:"Voigt",sub:"Upper"},{id:"mt",name:"Mori-Tanaka",sub:"Default"},{id:"reuss",name:"Reuss",sub:"Lower"}];
+var SOLVERS=[{id:"abaqus",name:"ABAQUS",sub:"Python"},{id:"ansys",name:"ANSYS",sub:"APDL"},{id:"matlab",name:"MATLAB",sub:"Script"}];
+
+var LAW_HINT={
+  power:"V_c = ((z + h/2)/h)^n. n = 0 is all ceramic, n \u2192 \u221e is all metal. The neutral surface shifts furthest from mid-plane around n \u2248 1 to 2.",
+  sigmoid:"Two symmetric power halves meeting at mid-plane. Continuous in slope, so it avoids the stress concentration a sharp power-law gradient can produce at the interfaces.",
+  exp:"P(z) = P_m exp(z-ratio \u00b7 ln(P_c/P_m)). Poisson's ratio is held constant, which is the standard assumption for E-FGM and the reason it has a closed form."
+};
+
+/* ======================= STATE ======================= */
+var F={cer:"al2o3",met:"al",law:"power",scheme:"mt",n:1,layers:20,a:1,b:1,h:0.01,solver:"abaqus",
+       ex0:"S",ex1:"S",ey0:"S",ey1:"S"};
+var EDGE_OPTS=[{id:"S",name:"Simply supported"},{id:"C",name:"Clamped"},{id:"F",name:"Free"}];
+var BC_PRESETS=[
+  {id:"SSSS",name:"SSSS",sub:"All simple"},
+  {id:"CCCC",name:"CCCC",sub:"All clamped"},
+  {id:"SCSC",name:"SCSC",sub:"Levy"},
+  {id:"SSSC",name:"SSSC",sub:"Levy"},
+  {id:"SFSF",name:"SFSF",sub:"Levy"},
+  {id:"CFFF",name:"CFFF",sub:"Cantilever"}
+];
+function bcCode(){ return F.ex0+F.ey0+F.ex1+F.ey1; }
+function applyPreset(code){
+  F.ex0=code[0]; F.ey0=code[1]; F.ex1=code[2]; F.ey1=code[3];
+}
+var L={seq:"[0/45/-45/90]s",ply:0.125,mat:"as4",E1:138,E2:8.96,G12:7.1,nu:0.30,rho:1600,a:1,b:1,solver:"abaqus"};
+var W={face:"al6061",Ef:70,nuf:0.33,tf:0.5,rhof:2700,syf:276,
+       core:"pvc100",Ec:200,Gc:50,tc:20,rhoc:60,tauc:0.9,a:1,b:0.6,q:2000,solver:"abaqus"};
+
+/* ======================= HELPERS ======================= */
+function el(id){return document.getElementById(id);}
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function fmt(v,d){ if(!isFinite(v)) return "—";
+  var a=Math.abs(v);
+  if(v===0) return "0";
+  if(a>=1e5||a<1e-3) return v.toExponential(d===undefined?3:d);
+  return v.toFixed(d===undefined?3:d);
+}
+function eng(v,d){ if(!isFinite(v)) return "—"; return v.toExponential(d===undefined?4:d); }
+function byId(arr,id){ for(var i=0;i<arr.length;i++) if(arr[i].id===id) return arr[i]; return arr[0]; }
+
+/* ======================= FGM PHYSICS ======================= */
+function voigt(Ec,nuc,Em,num,Vc){ return [Ec*Vc+Em*(1-Vc), nuc*Vc+num*(1-Vc)]; }
+function reuss(Ec,nuc,Em,num,Vc){
+  var E=1/(Vc/Ec+(1-Vc)/Em);
+  return [E, nuc*Vc+num*(1-Vc)];
+}
+function moriTanaka(Ec,nuc,Em,num,Vc){
+  var Kc=Ec/(3*(1-2*nuc)), Gc=Ec/(2*(1+nuc));
+  var Km=Em/(3*(1-2*num)), Gm=Em/(2*(1+num));
+  var fm=Gm*(9*Km+8*Gm)/(6*(Km+2*Gm));
+  var K=Km+(Kc-Km)*Vc/(1+(1-Vc)*(Kc-Km)/(Km+4/3*Gm));
+  var G=Gm+(Gc-Gm)*Vc/(1+(1-Vc)*(Gc-Gm)/(Gm+fm));
+  var E=9*K*G/(3*K+G), nu=(3*K-2*G)/(2*(3*K+G));
+  return [E,nu];
+}
+function homog(scheme,Ec,nuc,Em,num,Vc){
+  if(scheme==="voigt") return voigt(Ec,nuc,Em,num,Vc);
+  if(scheme==="reuss") return reuss(Ec,nuc,Em,num,Vc);
+  return moriTanaka(Ec,nuc,Em,num,Vc);
+}
+function volFrac(law,n,t){ // t = (z + h/2)/h  in [0,1]
+  if(law==="power") return Math.pow(t,n);
+  if(law==="sigmoid") return (t<=0.5) ? 0.5*Math.pow(2*t,n) : 1-0.5*Math.pow(2*(1-t),n);
+  return t; // exponential handled separately
+}
+function fgmProfile(scheme,law,n,cer,met,N){
+  var z=[],E=[],nu=[],rho=[],Vc=[];
+  for(var i=0;i<N;i++){
+    var t=i/(N-1);
+    var Ei,nui,rhoi,v;
+    if(law==="exp"){
+      Ei=met.E*Math.pow(cer.E/met.E,t);
+      rhoi=met.rho*Math.pow(cer.rho/met.rho,t);
+      nui=met.nu; v=t;
+    }else{
+      v=volFrac(law,n,t);
+      var r=homog(scheme,cer.E,cer.nu,met.E,met.nu,v);
+      Ei=r[0]; nui=r[1]; rhoi=cer.rho*v+met.rho*(1-v);
+    }
+    z.push(t-0.5); E.push(Ei); nu.push(nui); rho.push(rhoi); Vc.push(v);
+  }
+  return {z:z,E:E,nu:nu,rho:rho,Vc:Vc};
+}
+function trapz(y,x){ var s=0; for(var i=0;i<y.length-1;i++) s+=0.5*(y[i]+y[i+1])*(x[i+1]-x[i]); return s; }
+
+function fgmStiffness(scheme,law,n,cer,met,h){
+  var N=801;
+  var p=fgmProfile(scheme,law,n,cer,met,N);
+  var zz=[],Eb=[];
+  for(var i=0;i<N;i++){ zz.push(p.z[i]*h); Eb.push(p.E[i]*1e9/(1-p.nu[i]*p.nu[i])); }
+  var A=trapz(Eb,zz);
+  var m1=[]; for(i=0;i<N;i++) m1.push(Eb[i]*zz[i]);
+  var zns=trapz(m1,zz)/A;
+  var d=[]; for(i=0;i<N;i++) d.push(Eb[i]*(zz[i]-zns)*(zz[i]-zns));
+  var D=trapz(d,zz);
+  var bb=[]; for(i=0;i<N;i++) bb.push(Eb[i]*(zz[i]-zns));
+  var B=trapz(bb,zz);
+  var rr=[]; for(i=0;i<N;i++) rr.push(p.rho[i]);
+  var I0=trapz(rr,zz);
+  return {A:A,D:D,B:B,zns:zns,I0:I0,prof:p};
+}
+function plateFreq(D,I0,a,b,m,n){
+  var k=Math.PI*Math.PI*((m*m)/(a*a)+(n*n)/(b*b));
+  return k*Math.sqrt(D/I0)/(2*Math.PI);
+}
+
+/* ============ LEVY-TYPE EXACT SOLVER =============================
+   Valid when one pair of opposite edges is simply supported.
+   w(x,y) = W(y) sin(m*pi*x/a) reduces the PDE to an ODE in y:
+      W'''' - 2*al^2*W'' + (al^4 - lam)*W = 0,  lam = I0*w^2/D
+   The remaining two edge conditions give a 4x4 determinant whose
+   roots are the natural frequencies. Exact, not a series truncation.
+   Validated against Leissa (1969) to four decimal places for
+   SSSS, SCSS, SCSC, SSSF, SCSF and SFSF.                          */
+function levyBasis(y,a2,s){
+  var b1=Math.sqrt(a2+s), r=[];
+  var ch=Math.cosh(b1*y), sh=Math.sinh(b1*y);
+  r.push([ch, b1*sh, b1*b1*ch, b1*b1*b1*sh]);
+  r.push([sh, b1*ch, b1*b1*sh, b1*b1*b1*ch]);
+  if(s>a2){
+    var b2=Math.sqrt(s-a2), c=Math.cos(b2*y), sn=Math.sin(b2*y);
+    r.push([ c, -b2*sn, -b2*b2*c,  b2*b2*b2*sn]);
+    r.push([sn,  b2*c,  -b2*b2*sn, -b2*b2*b2*c]);
+  }else{
+    var b3=Math.sqrt(a2-s), ch2=Math.cosh(b3*y), sh2=Math.sinh(b3*y);
+    r.push([ch2, b3*sh2, b3*b3*ch2, b3*b3*b3*sh2]);
+    r.push([sh2, b3*ch2, b3*b3*sh2, b3*b3*b3*ch2]);
+  }
+  // transpose: d[p][j] = p-th derivative of basis j
+  var d=[[],[],[],[]];
+  for(var p=0;p<4;p++) for(var j=0;j<4;j++) d[p][j]=r[j][p];
+  return d;
+}
+function levyRows(bc,d,nu,a2){
+  var i,r1=[],r2=[];
+  if(bc==="S"){ for(i=0;i<4;i++){ r1.push(d[0][i]); r2.push(d[2][i]-nu*a2*d[0][i]); } }
+  else if(bc==="C"){ for(i=0;i<4;i++){ r1.push(d[0][i]); r2.push(d[1][i]); } }
+  else { for(i=0;i<4;i++){ r1.push(d[2][i]-nu*a2*d[0][i]); r2.push(d[3][i]-(2-nu)*a2*d[1][i]); } }
+  return [r1,r2];
+}
+function det4(M){
+  var A=[],i,j;
+  for(i=0;i<4;i++){ A.push(M[i].slice()); }
+  var det=1;
+  for(i=0;i<4;i++){
+    var piv=i;
+    for(j=i+1;j<4;j++) if(Math.abs(A[j][i])>Math.abs(A[piv][i])) piv=j;
+    if(Math.abs(A[piv][i])<1e-300) return 0;
+    if(piv!==i){ var t=A[i];A[i]=A[piv];A[piv]=t; det=-det; }
+    det*=A[i][i];
+    for(j=i+1;j<4;j++){
+      var f=A[j][i]/A[i][i];
+      for(var k=i;k<4;k++) A[j][k]-=f*A[i][k];
+    }
+  }
+  return det;
+}
+function levyDet(w,D,I0,a,b,nu,m,bc0,bcb){
+  var al=m*Math.PI/a, a2=al*al;
+  var s=Math.sqrt(I0*w*w/D);
+  var d0=levyBasis(0,a2,s), db=levyBasis(b,a2,s);
+  var R=levyRows(bc0,d0,nu,a2).concat(levyRows(bcb,db,nu,a2));
+  for(var i=0;i<4;i++){
+    var mx=0;
+    for(var j=0;j<4;j++) mx=Math.max(mx,Math.abs(R[i][j]));
+    if(mx>0) for(j=0;j<4;j++) R[i][j]/=mx;
+  }
+  return det4(R);
+}
+function levyScan(D,I0,a,b,nu,m,bc0,bcb,want,lamMax){
+  var sc=Math.sqrt(D/I0)/(a*a);
+  var wmax=lamMax*sc, N=9000, out=[];
+  var prev=levyDet(1e-6+wmax/N,D,I0,a,b,nu,m,bc0,bcb), wp=1e-6+wmax/N;
+  for(var i=2;i<=N&&out.length<want;i++){
+    var wc=i*wmax/N, cur=levyDet(wc,D,I0,a,b,nu,m,bc0,bcb);
+    if(isFinite(prev)&&isFinite(cur)&&prev*cur<0){
+      var lo=wp,hi=wc,flo=prev;
+      for(var k=0;k<70;k++){
+        var mid=0.5*(lo+hi), fm=levyDet(mid,D,I0,a,b,nu,m,bc0,bcb);
+        if(flo*fm<0){ hi=mid; } else { lo=mid; flo=fm; }
+      }
+      out.push(0.5*(lo+hi));
+    }
+    prev=cur; wp=wc;
+  }
+  return out;
+}
+/* The non-dimensional fundamental grows as pi^2*(1 + (a/b)^2), so a fixed
+   search ceiling silently returns nothing for slender plates. Widen until
+   we actually find the roots. */
+function levyFreqs(D,I0,a,b,nu,m,bc0,bcb,want){
+  var caps=[90,260,700,1800], out=[];
+  for(var c=0;c<caps.length;c++){
+    out=levyScan(D,I0,a,b,nu,m,bc0,bcb,want,caps[c]);
+    if(out.length>=want) return out;
+  }
+  return out;
+}
+
+/* ============ RAYLEIGH-RITZ (non-Levy edge combinations) ========== */
+var RC_CC=[4.730040745,7.853204624,10.995607838,14.137165491,17.278759657];
+var RC_CF=[1.875104069,4.694091133,7.854757438,10.995540734,14.137168391];
+var RC_SC=[3.926602312,7.068582746,10.210176122,13.351768777,16.493361431];
+function beamFn(fam,m,Lx,x){
+  var k,kL,s,ch,sh,c,sn;
+  if(fam==="S"){ k=m*Math.PI/Lx; return [Math.sin(k*x), k*Math.cos(k*x), -k*k*Math.sin(k*x)]; }
+  if(fam==="C"||fam==="CF"){
+    kL=(fam==="C"?RC_CC:RC_CF)[m-1]; k=kL/Lx;
+    s=(fam==="C") ? (Math.cosh(kL)-Math.cos(kL))/(Math.sinh(kL)-Math.sin(kL))
+                  : (Math.cosh(kL)+Math.cos(kL))/(Math.sinh(kL)+Math.sin(kL));
+    ch=Math.cosh(k*x); sh=Math.sinh(k*x); c=Math.cos(k*x); sn=Math.sin(k*x);
+    return [ch-c-s*(sh-sn), k*(sh+sn-s*(ch-c)), k*k*(ch+c-s*(sh+sn))];
+  }
+  if(fam==="FF"){
+    if(m===1) return [1,0,0];
+    if(m===2) return [(1-2*x/Lx)*Math.sqrt(3), -2*Math.sqrt(3)/Lx, 0];
+    kL=RC_CC[m-3]; k=kL/Lx;
+    s=(Math.cosh(kL)-Math.cos(kL))/(Math.sinh(kL)-Math.sin(kL));
+    ch=Math.cosh(k*x); sh=Math.sinh(k*x); c=Math.cos(k*x); sn=Math.sin(k*x);
+    return [ch+c-s*(sh+sn), k*(sh-sn-s*(ch+c)), k*k*(ch-c-s*(sh-sn))];
+  }
+  if(fam==="SC"){
+    kL=RC_SC[m-1]; k=kL/Lx; s=Math.sin(kL)/Math.sinh(kL);
+    return [Math.sin(k*x)-s*Math.sinh(k*x),
+            k*(Math.cos(k*x)-s*Math.cosh(k*x)),
+            k*k*(-Math.sin(k*x)-s*Math.sinh(k*x))];
+  }
+  // SF: m=1 is the rigid rotation about the pinned edge -- omitting it
+  // overpredicts SSSF by more than 100%.
+  if(m===1) return [Math.sqrt(3)*x/Lx, Math.sqrt(3)/Lx, 0];
+  kL=RC_SC[m-2]; k=kL/Lx; s=Math.sin(kL)/Math.sinh(kL);
+  return [Math.sin(k*x)+s*Math.sinh(k*x),
+          k*(Math.cos(k*x)+s*Math.cosh(k*x)),
+          k*k*(-Math.sin(k*x)+s*Math.sinh(k*x))];
+}
+function famOf(e0,e1){
+  var p=e0+e1;
+  if(p==="SS") return "S";
+  if(p==="CC") return "C";
+  if(p==="CF"||p==="FC") return "CF";
+  if(p==="FF") return "FF";
+  if(p==="SC"||p==="CS") return "SC";
+  return "SF";
+}
+var GL64=null;
+function gauss(n){ // Golub-Welsch via Newton on Legendre polynomials
+  if(GL64&&GL64.n===n) return GL64;
+  var x=[],w=[],i,j;
+  for(i=0;i<n;i++){
+    var z=Math.cos(Math.PI*(i+0.75)/(n+0.5)),pp=0;
+    for(j=0;j<100;j++){
+      var p0=1,p1=0;
+      for(var k=0;k<n;k++){ var p2=p1; p1=p0; p0=((2*k+1)*z*p1-k*p2)/(k+1); }
+      pp=n*(z*p0-p1)/(z*z-1);
+      var dz=p0/pp; z-=dz; if(Math.abs(dz)<1e-14) break;
+    }
+    x.push(z); w.push(2/((1-z*z)*pp*pp));
+  }
+  GL64={n:n,x:x,w:w}; return GL64;
+}
+function jacobiEig(A,n){
+  var i,j,p,q,V=A.map(function(r){return r.slice();});
+  for(var sweep=0;sweep<80;sweep++){
+    var off=0;
+    for(p=0;p<n;p++) for(q=p+1;q<n;q++) off+=V[p][q]*V[p][q];
+    if(off<1e-22) break;
+    for(p=0;p<n;p++) for(q=p+1;q<n;q++){
+      if(Math.abs(V[p][q])<1e-300) continue;
+      var theta=(V[q][q]-V[p][p])/(2*V[p][q]);
+      var t=(theta>=0?1:-1)/(Math.abs(theta)+Math.sqrt(theta*theta+1));
+      var c=1/Math.sqrt(t*t+1), s=t*c;
+      for(i=0;i<n;i++){
+        var vip=V[i][p], viq=V[i][q];
+        V[i][p]=c*vip-s*viq; V[i][q]=s*vip+c*viq;
+      }
+      for(i=0;i<n;i++){
+        var vpi=V[p][i], vqi=V[q][i];
+        V[p][i]=c*vpi-s*vqi; V[q][i]=s*vpi+c*vqi;
+      }
+    }
+  }
+  var ev=[]; for(i=0;i<n;i++) ev.push(V[i][i]);
+  return ev.sort(function(a,b){return a-b;});
+}
+function ritzFreqs(D,I0,a,b,nu,ex0,ex1,ey0,ey1,NT,want){
+  NT=NT||5;
+  var fx=famOf(ex0,ex1), fy=famOf(ey0,ey1);
+  var NQ=90, g=gauss(NQ), i,j,m,p,q;
+  var xq=[],wxq=[],yq=[],wyq=[];
+  for(i=0;i<NQ;i++){ xq.push(0.5*a*(g.x[i]+1)); wxq.push(0.5*a*g.w[i]);
+                     yq.push(0.5*b*(g.x[i]+1)); wyq.push(0.5*b*g.w[i]); }
+  var X=[[],[],[]],Y=[[],[],[]];
+  for(m=1;m<=NT;m++){
+    var xr=[[],[],[]],yr=[[],[],[]];
+    for(i=0;i<NQ;i++){
+      var fv=beamFn(fx,m,a,xq[i]); xr[0].push(fv[0]); xr[1].push(fv[1]); xr[2].push(fv[2]);
+      var gv=beamFn(fy,m,b,yq[i]); yr[0].push(gv[0]); yr[1].push(gv[1]); yr[2].push(gv[2]);
+    }
+    for(p=0;p<3;p++){ X[p].push(xr[p]); Y[p].push(yr[p]); }
+  }
+  function IX(p,q_,i2,j2){ var s=0; for(var t=0;t<NQ;t++) s+=wxq[t]*X[p][i2][t]*X[q_][j2][t]; return s; }
+  function IY(p,q_,i2,j2){ var s=0; for(var t=0;t<NQ;t++) s+=wyq[t]*Y[p][i2][t]*Y[q_][j2][t]; return s; }
+  var N=NT*NT, idx=[];
+  for(i=0;i<NT;i++) for(j=0;j<NT;j++) idx.push([i,j]);
+  var K=[],M=[];
+  for(i=0;i<N;i++){ K.push(new Array(N).fill(0)); M.push(new Array(N).fill(0)); }
+  for(var r=0;r<N;r++){
+    for(var c=r;c<N;c++){
+      var i1=idx[r][0],j1=idx[r][1],k1=idx[c][0],l1=idx[c][1];
+      var kv=D*( IX(2,2,i1,k1)*IY(0,0,j1,l1) + IX(0,0,i1,k1)*IY(2,2,j1,l1)
+               + nu*(IX(2,0,i1,k1)*IY(0,2,j1,l1) + IX(0,2,i1,k1)*IY(2,0,j1,l1))
+               + 2*(1-nu)*IX(1,1,i1,k1)*IY(1,1,j1,l1) );
+      var mv=I0*IX(0,0,i1,k1)*IY(0,0,j1,l1);
+      K[r][c]=K[c][r]=kv; M[r][c]=M[c][r]=mv;
+    }
+  }
+  // Cholesky M = L L^T, then A = L^-1 K L^-T (symmetric)
+  var L=[]; for(i=0;i<N;i++) L.push(new Array(N).fill(0));
+  for(i=0;i<N;i++){
+    for(j=0;j<=i;j++){
+      var s2=M[i][j];
+      for(var k2=0;k2<j;k2++) s2-=L[i][k2]*L[j][k2];
+      if(i===j){ if(s2<=0) return null; L[i][i]=Math.sqrt(s2); }
+      else L[i][j]=s2/L[j][j];
+    }
+  }
+  function fwd(v){ var y=new Array(N).fill(0);
+    for(var i2=0;i2<N;i2++){ var s3=v[i2];
+      for(var k3=0;k3<i2;k3++) s3-=L[i2][k3]*y[k3];
+      y[i2]=s3/L[i2][i2]; } return y; }
+  var T=[]; for(i=0;i<N;i++) T.push(fwd(K[i]));         // rows: L^-1 K   (K symmetric)
+  var A=[]; for(i=0;i<N;i++) A.push(new Array(N).fill(0));
+  for(i=0;i<N;i++){
+    var col=[]; for(j=0;j<N;j++) col.push(T[j][i]);
+    var y2=fwd(col);
+    for(j=0;j<N;j++) A[j][i]=y2[j];
+  }
+  for(i=0;i<N;i++) for(j=i+1;j<N;j++){ var av=0.5*(A[i][j]+A[j][i]); A[i][j]=A[j][i]=av; }
+  var ev=jacobiEig(A,N).filter(function(v){return v>1e-9;});
+  return ev.slice(0,want||6).map(function(v){return Math.sqrt(v);});
+}
+
+/* Dispatcher: Levy where a simply supported pair exists, Ritz otherwise. */
+function fgmModes(D,I0,a,b,nu,ex0,ex1,ey0,ey1,want){
+  want=want||6;
+  if(ex0==="S"&&ex1==="S"){
+    var all=[];
+    for(var m=1;m<=4;m++){
+      levyFreqs(D,I0,a,b,nu,m,ey0,ey1,4).forEach(function(w){all.push(w);});
+    }
+    all.sort(function(x,y){return x-y;});
+    return {method:"levy",exact:true,f:all.slice(0,want).map(function(w){return w/(2*Math.PI);})};
+  }
+  if(ey0==="S"&&ey1==="S"){
+    var all2=[];
+    for(var n=1;n<=4;n++){
+      levyFreqs(D,I0,b,a,nu,n,ex0,ex1,4).forEach(function(w){all2.push(w);});
+    }
+    all2.sort(function(x,y){return x-y;});
+    return {method:"levy",exact:true,f:all2.slice(0,want).map(function(w){return w/(2*Math.PI);})};
+  }
+  var r=ritzFreqs(D,I0,a,b,nu,ex0,ex1,ey0,ey1,5,want);
+  if(!r) return {method:"none",exact:false,f:[]};
+  return {method:"ritz",exact:false,f:r.map(function(w){return w/(2*Math.PI);})};
+}
+
+/* ======================= LAMINATE PHYSICS ======================= */
+function parseStack(s){
+  s=String(s).replace(/\s+/g,"");
+  var m=s.match(/^\[(.+)\](\d*)(s?)$/i);
+  if(!m) return null;
+  var inner=m[1].split("/");
+  var rep=m[2]?parseInt(m[2],10):1;
+  var sym=!!m[3];
+  var base=[];
+  for(var i=0;i<inner.length;i++){
+    var tok=inner[i];
+    if(!tok) return null;
+    if(tok.charAt(0)==="\u00B1"||tok.substr(0,2)==="+-"){
+      var v=parseFloat(tok.replace(/^(\u00B1|\+-)/,""));
+      if(isNaN(v)) return null;
+      base.push(v); base.push(-v);
+    }else{
+      var w=parseFloat(tok);
+      if(isNaN(w)) return null;
+      base.push(w);
+    }
+  }
+  var out=[];
+  for(var r=0;r<rep;r++) out=out.concat(base);
+  if(sym) out=out.concat(out.slice().reverse());
+  if(out.length>200) return null;
+  return out;
+}
+function Qmat(E1,E2,G12,nu12){
+  var nu21=nu12*E2/E1, d=1-nu12*nu21;
+  return {q11:E1/d, q12:nu12*E2/d, q22:E2/d, q66:G12};
+}
+function QbarMat(Q,thDeg){
+  var th=thDeg*Math.PI/180, c=Math.cos(th), s=Math.sin(th);
+  var c2=c*c,s2=s*s,c4=c2*c2,s4=s2*s2,cs=c*s;
+  var Q11=Q.q11,Q12=Q.q12,Q22=Q.q22,Q66=Q.q66;
+  return {
+    b11: Q11*c4+2*(Q12+2*Q66)*s2*c2+Q22*s4,
+    b12: (Q11+Q22-4*Q66)*s2*c2+Q12*(c4+s4),
+    b22: Q11*s4+2*(Q12+2*Q66)*s2*c2+Q22*c4,
+    b16: (Q11-Q12-2*Q66)*c2*cs-(Q22-Q12-2*Q66)*s2*cs,
+    b26: (Q11-Q12-2*Q66)*s2*cs-(Q22-Q12-2*Q66)*c2*cs,
+    b66: (Q11+Q22-2*Q12-2*Q66)*s2*c2+Q66*(c4+s4)
+  };
+}
+function computeABD(angles,tply,E1,E2,G12,nu12){
+  var nP=angles.length, tot=nP*tply;
+  var Q=Qmat(E1*1e9,E2*1e9,G12*1e9,nu12);
+  var A=[[0,0,0],[0,0,0],[0,0,0]], B=[[0,0,0],[0,0,0],[0,0,0]], D=[[0,0,0],[0,0,0],[0,0,0]];
+  var zk=-tot/2;
+  for(var k=0;k<nP;k++){
+    var z0=zk, z1=zk+tply; zk=z1;
+    var q=QbarMat(Q,angles[k]);
+    var M=[[q.b11,q.b12,q.b16],[q.b12,q.b22,q.b26],[q.b16,q.b26,q.b66]];
+    var d1=z1-z0, d2=(z1*z1-z0*z0)/2, d3=(z1*z1*z1-z0*z0*z0)/3;
+    for(var i=0;i<3;i++) for(var j=0;j<3;j++){
+      A[i][j]+=M[i][j]*d1; B[i][j]+=M[i][j]*d2; D[i][j]+=M[i][j]*d3;
+    }
+  }
+  return {A:A,B:B,D:D,h:tot,n:nP};
+}
+function inv3(M){
+  var a=M[0][0],b=M[0][1],c=M[0][2],d=M[1][0],e=M[1][1],f=M[1][2],g=M[2][0],hh=M[2][1],i=M[2][2];
+  var det=a*(e*i-f*hh)-b*(d*i-f*g)+c*(d*hh-e*g);
+  if(Math.abs(det)<1e-30) return null;
+  return [
+    [(e*i-f*hh)/det, (c*hh-b*i)/det, (b*f-c*e)/det],
+    [(f*g-d*i)/det, (a*i-c*g)/det, (c*d-a*f)/det],
+    [(d*hh-e*g)/det, (b*g-a*hh)/det, (a*e-b*d)/det]
+  ];
+}
+function lamFreq(D,rhoA,a,b,m,n){
+  var am=m/a, bn=n/b;
+  var num=D[0][0]*Math.pow(am,4)+2*(D[0][1]+2*D[2][2])*am*am*bn*bn+D[1][1]*Math.pow(bn,4);
+  return Math.PI*Math.PI*Math.sqrt(num/rhoA)/(2*Math.PI);
+}
+
+/* ======================= SANDWICH PHYSICS ======================= */
+function sandwich(){
+  var tf=W.tf/1000, tc=W.tc/1000;
+  var Ef=W.Ef*1e9, Ec=W.Ec*1e6, Gc=W.Gc*1e6;
+  var h=tc+2*tf, d=tc+tf;
+  var D=Ef*(Math.pow(h,3)-Math.pow(tc,3))/(12*(1-W.nuf*W.nuf))+Ec*Math.pow(tc,3)/(12*(1-0.3*0.3));
+  var S=Gc*d*d/tc;
+  var rhoA=2*W.rhof*tf+W.rhoc*tc;
+  var k2=Math.PI*Math.PI*(1/(W.a*W.a)+1/(W.b*W.b));
+  var wb=Math.sqrt(D*k2*k2/rhoA);
+  var ws=Math.sqrt(D*k2*k2/(rhoA*(1+D*k2/S)));
+  // strip bending under uniform pressure, simply supported over the short span
+  var Lspan=Math.min(W.a,W.b);
+  var Mmax=W.q*Lspan*Lspan/8;
+  var Vmax=W.q*Lspan/2;
+  var sigF=Mmax/(tf*d);
+  var tauC=Vmax/d;
+  var sigWr=0.5*Math.pow(Ef*Ec*Gc,1/3);
+  return {h:h,d:d,D:D,S:S,rhoA:rhoA,k2:k2,fb:wb/(2*Math.PI),fs:ws/(2*Math.PI),
+          ratio:D*k2/S, sigF:sigF, tauC:tauC, sigWr:sigWr,
+          sigFy:W.syf*1e6, tauCy:W.tauc*1e6, Lspan:Lspan};
+}
+
+/* ======================= SYNTAX HIGHLIGHT ======================= */
+var PAT={
+  py:/(#[^\n]*)|('[^'\n]*'|"[^"\n]*")|\b(from|import|def|for|in|if|else|return|None|True|False|del|range|len|print|enumerate)\b|\b(\d+\.?\d*(?:[eE][-+]?\d+)?)\b/g,
+  m:/(%[^\n]*)|('[^'\n]*')|\b(function|end|for|while|if|else|elseif|return|clear|clc|close|figure|fprintf|zeros|ones|sqrt|linspace|plot|semilogy|xlabel|ylabel|title|grid|legend|size|numel|inv|sort|disp|pi|cosd|sind|trapz|sum|abs|max|min)\b|\b(\d+\.?\d*(?:[eE][-+]?\d+)?)\b/g,
+  apdl:/(![^\n]*)|('[^'\n]*')|^\s*(\/?[A-Z][A-Z0-9_]*)(?=,|\s*$)|\b(\d+\.?\d*(?:[eE][-+]?\d+)?)\b/gm
+};
+function hl(src,lang){
+  var re=PAT[lang]; if(!re) return esc(src);
+  var out="",last=0,mm; re.lastIndex=0;
+  while((mm=re.exec(src))!==null){
+    if(mm.index<last) continue;
+    out+=esc(src.slice(last,mm.index));
+    var cls,txt=mm[0],lead="";
+    if(mm[1]!==undefined) cls="tk-c";
+    else if(mm[2]!==undefined) cls=(lang==="apdl")?"tk-k":"tk-s";
+    else if(mm[3]!==undefined) cls="tk-k";
+    else cls="tk-n";
+    var lw=txt.match(/^\s+/);
+    if(lw&&lang==="apdl"){ lead=lw[0]; txt=txt.slice(lead.length); }
+    out+=esc(lead)+'<span class="'+cls+'">'+esc(txt)+'</span>';
+    last=mm.index+mm[0].length;
+    if(re.lastIndex===mm.index) re.lastIndex++;
+  }
+  return out+esc(src.slice(last));
+}
+
+/* ======================= CHART ======================= */
+function drawProfile(prof,znsNorm){
+  var svg=el("fgPlot");
+  var W_=460,H_=330,ml=52,mr=26,mt=14,mb=42;
+  var pw=W_-ml-mr, ph=H_-mt-mb;
+  var Emax=0,Rmax=0,i;
+  for(i=0;i<prof.E.length;i++){ if(prof.E[i]>Emax)Emax=prof.E[i]; if(prof.rho[i]>Rmax)Rmax=prof.rho[i]; }
+  function X(v){ return ml+v*pw; }
+  function Y(zn){ return mt+(0.5-zn)*ph; }
+  var g=[];
+  // grid + x axis
+  for(var t=0;t<=1.0001;t+=0.25){
+    g.push('<line class="grid-line" x1="'+X(t).toFixed(1)+'" y1="'+mt+'" x2="'+X(t).toFixed(1)+'" y2="'+(mt+ph)+'"/>');
+    g.push('<text class="ax-txt" x="'+X(t).toFixed(1)+'" y="'+(mt+ph+15)+'" text-anchor="middle">'+t.toFixed(2)+'</text>');
+  }
+  // y ticks
+  [-0.5,-0.25,0,0.25,0.5].forEach(function(zn){
+    g.push('<line class="grid-line" x1="'+ml+'" y1="'+Y(zn).toFixed(1)+'" x2="'+(ml+pw)+'" y2="'+Y(zn).toFixed(1)+'"/>');
+    g.push('<text class="ax-txt" x="'+(ml-8)+'" y="'+(Y(zn)+3.5).toFixed(1)+'" text-anchor="end">'+(zn>0?"+":"")+zn.toFixed(2)+'</text>');
+  });
+  g.push('<line class="ax-line" x1="'+ml+'" y1="'+mt+'" x2="'+ml+'" y2="'+(mt+ph)+'"/>');
+  g.push('<line class="ax-line" x1="'+ml+'" y1="'+(mt+ph)+'" x2="'+(ml+pw)+'" y2="'+(mt+ph)+'"/>');
+  // neutral surface
+  if(isFinite(znsNorm)){
+    g.push('<line class="ns-line" x1="'+ml+'" y1="'+Y(znsNorm).toFixed(1)+'" x2="'+(ml+pw)+'" y2="'+Y(znsNorm).toFixed(1)+'"/>');
+    g.push('<text class="ns-txt" x="'+(ml+pw)+'" y="'+(Y(znsNorm)-6).toFixed(1)+'" text-anchor="end">neutral surface</text>');
+  }
+  // series
+  function poly(vals,max,color){
+    var pts=[];
+    for(var i=0;i<vals.length;i++) pts.push(X(vals[i]/max).toFixed(1)+","+Y(prof.z[i]).toFixed(1));
+    return '<polyline fill="none" stroke="'+color+'" stroke-width="2" stroke-linejoin="round" points="'+pts.join(" ")+'"/>';
+  }
+  g.push(poly(prof.rho,Rmax,"var(--s2)"));
+  g.push(poly(prof.E,Emax,"var(--s1)"));
+  // direct labels at the ceramic (top) end
+  var lastE=prof.E[prof.E.length-1]/Emax, lastR=prof.rho[prof.rho.length-1]/Rmax;
+  g.push('<text class="dl" fill="var(--s1)" x="'+(X(lastE)-4)+'" y="'+(Y(0.5)+13)+'" text-anchor="end">E</text>');
+  g.push('<text class="dl" fill="var(--s2)" x="'+(X(lastR)-4)+'" y="'+(Y(0.5)+25)+'" text-anchor="end">\u03C1</text>');
+  // axis labels
+  g.push('<text class="ax-lab" x="'+(ml+pw/2)+'" y="'+(H_-6)+'" text-anchor="middle">property / ceramic value</text>');
+  g.push('<text class="ax-lab" transform="translate(13,'+(mt+ph/2)+') rotate(-90)" text-anchor="middle">z / h</text>');
+  svg.innerHTML=g.join("");
+}
+
+/* ======================= SCRIPT GENERATORS: FGM ======================= */
+function fgmLayers(){
+  var cer=byId(CERAMICS,F.cer), met=byId(METALS,F.met);
+  var out=[];
+  for(var k=0;k<F.layers;k++){
+    var t=(k+0.5)/F.layers;              // mid-layer through-thickness coordinate
+    var E,nu,rho,v;
+    if(F.law==="exp"){
+      E=met.E*Math.pow(cer.E/met.E,t); rho=met.rho*Math.pow(cer.rho/met.rho,t); nu=met.nu; v=t;
+    }else{
+      v=volFrac(F.law,F.n,t);
+      var r=homog(F.scheme,cer.E,cer.nu,met.E,met.nu,v);
+      E=r[0]; nu=r[1]; rho=cer.rho*v+met.rho*(1-v);
+    }
+    out.push({k:k+1,E:E*1e9,nu:nu,rho:rho,Vc:v,t:F.h/F.layers});
+  }
+  return out;
+}
+function fgmRefFreq(st){
+  var nuAvg=0,q; for(q=0;q<st.prof.nu.length;q++) nuAvg+=st.prof.nu[q];
+  nuAvg/=st.prof.nu.length;
+  var md=fgmModes(st.D,st.I0,F.a,F.b,nuAvg,F.ex0,F.ex1,F.ey0,F.ey1,1);
+  return {f:(md.f[0]||0), method:md.method, nu:nuAvg};
+}
+var EDGE_NAME={S:"simply supported",C:"clamped",F:"free"};
+function abqEdgeBC(o){
+  o.push("tol = 1.0e-6");
+  o.push("eX0 = inst.edges.getByBoundingBox(-tol,-tol,-tol, tol, B_LEN+tol, tol)");
+  o.push("eX1 = inst.edges.getByBoundingBox(A_LEN-tol,-tol,-tol, A_LEN+tol, B_LEN+tol, tol)");
+  o.push("eY0 = inst.edges.getByBoundingBox(-tol,-tol,-tol, A_LEN+tol, tol, tol)");
+  o.push("eY1 = inst.edges.getByBoundingBox(-tol,B_LEN-tol,-tol, A_LEN+tol, B_LEN+tol, tol)");
+  o.push("");
+  [["eX0",F.ex0,"x=0"],["eX1",F.ex1,"x=a"],["eY0",F.ey0,"y=0"],["eY1",F.ey1,"y=b"]].forEach(function(e,i){
+    var tag=e[0], bc=e[1], nm=e[2];
+    if(bc==="F"){ o.push("# Edge "+nm+" is FREE -- no constraint applied."); o.push(""); return; }
+    o.push("a.Set(edges="+tag+", name='Set_"+tag+"')   # "+nm+", "+EDGE_NAME[bc]);
+    if(bc==="S"){
+      o.push("m.DisplacementBC(name='BC_"+tag+"', createStepName='Initial',");
+      o.push("                 region=a.sets['Set_"+tag+"'], u1=0.0, u2=0.0, u3=0.0)");
+    }else{
+      o.push("m.DisplacementBC(name='BC_"+tag+"', createStepName='Initial',");
+      o.push("                 region=a.sets['Set_"+tag+"'],");
+      o.push("                 u1=0.0, u2=0.0, u3=0.0, ur1=0.0, ur2=0.0, ur3=0.0)");
+    }
+    o.push("");
+  });
+}
+function apdlEdgeBC(o){
+  [["X",0,F.ex0,"x=0"],["X","AA",F.ex1,"x=a"],["Y",0,F.ey0,"y=0"],["Y","BB",F.ey1,"y=b"]].forEach(function(e){
+    if(e[2]==="F"){ o.push("! Edge "+e[3]+" is FREE -- no constraint."); return; }
+    o.push("NSEL,S,LOC,"+e[0]+","+e[1]+"          ! "+e[3]+", "+EDGE_NAME[e[2]]);
+    if(e[2]==="S"){ o.push("D,ALL,UX,0"); o.push("D,ALL,UY,0"); o.push("D,ALL,UZ,0"); }
+    else o.push("D,ALL,ALL,0");
+  });
+  o.push("ALLSEL,ALL");
+}
+function genFgmAbaqus(){
+  var lay=fgmLayers(), cer=byId(CERAMICS,F.cer), met=byId(METALS,F.met);
+  var st=fgmStiffness(F.scheme,F.law,F.n,cer,met,F.h);
+  var ref=fgmRefFreq(st);
+  var o=[];
+  o.push("# -*- coding: utf-8 -*-");
+  o.push("# Functionally graded plate -- generated by CAE Copilot");
+  o.push("# " + cer.name + " (top) graded to " + met.name + " (bottom)");
+  o.push("# Law: " + F.law.toUpperCase() + (F.law==="exp"?"":", n = "+F.n) + "   Homogenization: " + F.scheme.toUpperCase());
+  o.push("# Discretised into " + F.layers + " layers. Units: SI (m, kg, s, Pa).");
+  o.push("#");
+  o.push("# Reference values from the analytical integration:");
+  o.push("#   neutral surface z_ns = " + eng(st.zns) + " m  (" + (st.zns/F.h).toFixed(5) + " h)");
+  o.push("#   bending rigidity D   = " + eng(st.D) + " N.m");
+  o.push("#   mass per area  I0    = " + eng(st.I0) + " kg/m^2");
+  o.push("#   boundary conditions  = " + bcCode() + "  (x=0, y=0, x=a, y=b)");
+  o.push("#   f1 = " + ref.f.toFixed(4) + " Hz  by the " +
+         (ref.method==="levy"?"Levy exact solution":"Rayleigh-Ritz 5x5 method"));
+  o.push("");
+  o.push("from abaqus import *");
+  o.push("from abaqusConstants import *");
+  o.push("from caeModules import *");
+  o.push("import mesh");
+  o.push("");
+  o.push("A_LEN = " + F.a + "; B_LEN = " + F.b + "; H = " + F.h);
+  o.push("NMODES = 10");
+  o.push("SEED = " + (Math.min(F.a,F.b)/40).toFixed(5));
+  o.push("");
+  o.push("Mdb()");
+  o.push("mdb.models.changeKey(fromName='Model-1', toName='FGMPlate')");
+  o.push("m = mdb.models['FGMPlate']");
+  o.push("");
+  o.push("# ---- Layer properties (mid-layer homogenisation) ----------------");
+  o.push("# (name, E, nu, rho, ceramic volume fraction)");
+  o.push("layers = [");
+  lay.forEach(function(L_){
+    o.push("    ('FGM_"+L_.k+"', "+L_.E.toExponential(6)+", "+L_.nu.toFixed(6)+", "+L_.rho.toFixed(3)+", "+L_.Vc.toFixed(6)+"),");
+  });
+  o.push("]");
+  o.push("");
+  o.push("for nm, E, nu, rho, vc in layers:");
+  o.push("    mat = m.Material(name=nm)");
+  o.push("    mat.Elastic(table=((E, nu), ))");
+  o.push("    mat.Density(table=((rho, ), ))");
+  o.push("");
+  o.push("# ---- Geometry ---------------------------------------------------");
+  o.push("s = m.ConstrainedSketch(name='sk', sheetSize=2.0*max(A_LEN, B_LEN))");
+  o.push("s.rectangle(point1=(0.0, 0.0), point2=(A_LEN, B_LEN))");
+  o.push("p = m.Part(name='Plate', dimensionality=THREE_D, type=DEFORMABLE_BODY)");
+  o.push("p.BaseShell(sketch=s)");
+  o.push("del m.sketches['sk']");
+  o.push("");
+  o.push("# ---- Composite shell section: bottom (metal) to top (ceramic) ---");
+  o.push("tply = H/float(len(layers))");
+  o.push("plies = []");
+  o.push("for idx, (nm, E, nu, rho, vc) in enumerate(layers):");
+  o.push("    plies.append(section.SectionLayer(thickness=tply, material=nm,");
+  o.push("                                      orientAngle=0.0, numIntPts=3,");
+  o.push("                                      plyName='L%d' % (idx+1)))");
+  o.push("m.CompositeShellSection(name='FGMSec', preIntegrate=OFF,");
+  o.push("                        idealization=NO_IDEALIZATION,");
+  o.push("                        thicknessType=UNIFORM, layup=(),");
+  o.push("                        layupName='FGM', symmetric=False,");
+  o.push("                        thicknessModulus=None, temperature=GRADIENT,");
+  o.push("                        poissonDefinition=DEFAULT,");
+  o.push("                        integrationRule=SIMPSON, layers=tuple(plies))");
+  o.push("p.SectionAssignment(region=Region(faces=p.faces), sectionName='FGMSec')");
+  o.push("");
+  o.push("# NOTE: Abaqus references a composite shell to its own mid-plane.");
+  o.push("# Because the FGM layup is asymmetric, that produces a non-zero B");
+  o.push("# matrix -- which is CORRECT and is exactly the bending-stretching");
+  o.push("# coupling the neutral-surface formulation removes analytically.");
+  o.push("# Expect the FE frequency to differ from the classical value unless");
+  o.push("# in-plane motion at the edges is restrained.");
+  o.push("");
+  o.push("# ---- Mesh -------------------------------------------------------");
+  o.push("p.seedPart(size=SEED, deviationFactor=0.1, minSizeFactor=0.1)");
+  o.push("p.setElementType(regions=(p.faces, ),");
+  o.push("                 elemTypes=(mesh.ElemType(elemCode=S4R, elemLibrary=STANDARD), ))");
+  o.push("p.generateMesh()");
+  o.push("");
+  o.push("a = m.rootAssembly");
+  o.push("a.DatumCsysByDefault(CARTESIAN)");
+  o.push("inst = a.Instance(name='Plate-1', part=p, dependent=ON)");
+  o.push("");
+  o.push("m.FrequencyStep(name='Modal', previous='Initial',");
+  o.push("                eigensolver=LANCZOS, numEigen=NMODES, normalization=MASS)");
+  o.push("");
+  o.push("# ---- Boundary conditions: " + bcCode() + " ------------------------------");
+  abqEdgeBC(o);
+  o.push("job = mdb.Job(name='FGMPlate', model='FGMPlate', numCpus=4, numDomains=4)");
+  o.push("job.writeInput(consistencyChecking=OFF)");
+  o.push("print('Written FGMPlate.inp -- compare mode 1 against " + ref.f.toFixed(4) + " Hz')");
+  return o.join("\n");
+}
+function genFgmAnsys(){
+  var lay=fgmLayers(), cer=byId(CERAMICS,F.cer), met=byId(METALS,F.met);
+  var st=fgmStiffness(F.scheme,F.law,F.n,cer,met,F.h);
+  var ref=fgmRefFreq(st);
+  var o=[];
+  o.push("! =================================================================");
+  o.push("!  Functionally graded plate -- generated by CAE Copilot");
+  o.push("!  " + cer.name + " (top) -> " + met.name + " (bottom)");
+  o.push("!  Law " + F.law.toUpperCase() + (F.law==="exp"?"":", n = "+F.n) + " | " + F.scheme.toUpperCase() + " | " + F.layers + " layers");
+  o.push("!  BCs " + bcCode() + " (x=0, y=0, x=a, y=b)");
+  o.push("!  Analytical check: D = " + eng(st.D) + " N.m, f1 = " + ref.f.toFixed(4) + " Hz");
+  o.push("! =================================================================");
+  o.push("FINISH");
+  o.push("/CLEAR,START");
+  o.push("/TITLE,FGM plate modal analysis");
+  o.push("/PREP7");
+  o.push("");
+  o.push("AA = " + F.a);
+  o.push("BB = " + F.b);
+  o.push("HH = " + F.h);
+  o.push("NMODE = 10");
+  o.push("ESZ = " + (Math.min(F.a,F.b)/40).toFixed(5));
+  o.push("");
+  o.push("ET,1,SHELL181");
+  o.push("KEYOPT,1,3,2");
+  o.push("");
+  o.push("! ---- Layer materials (mid-layer homogenisation) -----------------");
+  lay.forEach(function(L_){
+    o.push("MP,EX,"+L_.k+","+L_.E.toExponential(6)+"    ! Vc = "+L_.Vc.toFixed(4));
+    o.push("MP,PRXY,"+L_.k+","+L_.nu.toFixed(6));
+    o.push("MP,DENS,"+L_.k+","+L_.rho.toFixed(3));
+  });
+  o.push("");
+  o.push("! ---- Layered section, bottom (metal) to top (ceramic) -----------");
+  o.push("SECTYPE,1,SHELL");
+  var tl=(F.h/F.layers);
+  lay.forEach(function(L_){
+    o.push("SECDATA,"+tl.toExponential(6)+","+L_.k+",0,3");
+  });
+  o.push("SECOFFSET,MID");
+  o.push("");
+  o.push("RECTNG,0,AA,0,BB");
+  o.push("ESIZE,ESZ");
+  o.push("MSHKEY,1");
+  o.push("AMESH,ALL");
+  o.push("");
+  o.push("! ---- Boundary conditions: " + bcCode() + " ---------------------------");
+  apdlEdgeBC(o);
+  o.push("");
+  o.push("FINISH");
+  o.push("/SOLU");
+  o.push("ANTYPE,MODAL");
+  o.push("MODOPT,LANB,NMODE");
+  o.push("MXPAND,NMODE");
+  o.push("SOLVE");
+  o.push("FINISH");
+  o.push("");
+  o.push("/POST1");
+  o.push("SET,LIST                  ! compare mode 1 against " + ref.f.toFixed(4) + " Hz");
+  return o.join("\n");
+}
+function genFgmMatlab(){
+  var cer=byId(CERAMICS,F.cer), met=byId(METALS,F.met);
+  var st=fgmStiffness(F.scheme,F.law,F.n,cer,met,F.h);
+  var o=[];
+  o.push("%% Functionally graded plate -- neutral-surface formulation");
+  o.push("%  Generated by CAE Copilot. Units: SI (m, kg, s, Pa).");
+  o.push("%  " + cer.name + " (top) graded to " + met.name + " (bottom)");
+  o.push("%  Law: " + F.law.toUpperCase() + (F.law==="exp"?"":("  n = "+F.n)) + "   Scheme: " + F.scheme.toUpperCase());
+  o.push("%");
+  o.push("%  The point of this script: for an FGM the stiffness distribution is");
+  o.push("%  asymmetric, so the mid-plane is NOT the bending reference. Referring");
+  o.push("%  bending to the physical neutral surface makes the coupling term B");
+  o.push("%  vanish identically, which is what lets you use a one-field plate");
+  o.push("%  equation instead of a coupled system.");
+  o.push("");
+  o.push("clear; clc; close all;");
+  o.push("");
+  o.push("a = " + F.a + "; b = " + F.b + "; h = " + F.h + ";");
+  o.push("Ec = " + (cer.E*1e9).toExponential(4) + "; nuc = " + cer.nu + "; rhoc = " + cer.rho + ";   % " + cer.name);
+  o.push("Em = " + (met.E*1e9).toExponential(4) + "; num = " + met.nu + "; rhom = " + met.rho + ";   % " + met.name);
+  o.push("n  = " + F.n + ";");
+  o.push("N  = 2001;                      % through-thickness integration points");
+  o.push("");
+  o.push("z = linspace(-h/2, h/2, N).';");
+  o.push("t = (z + h/2)/h;                % 0 at bottom (metal), 1 at top (ceramic)");
+  o.push("");
+  if(F.law==="exp"){
+    o.push("% Exponential law: nu held constant (standard E-FGM assumption)");
+    o.push("E   = Em*(Ec/Em).^t;");
+    o.push("nu  = num*ones(size(z));");
+    o.push("rho = rhom*(rhoc/rhom).^t;");
+  }else{
+    if(F.law==="power") o.push("Vc = t.^n;                      % power law");
+    else o.push("Vc = (t<=0.5).*(0.5*(2*t).^n) + (t>0.5).*(1 - 0.5*(2*(1-t)).^n);   % sigmoid");
+    o.push("");
+    if(F.scheme==="voigt"){
+      o.push("% Voigt (rule of mixtures) -- stiff upper bound");
+      o.push("E  = Ec*Vc + Em*(1-Vc);");
+      o.push("nu = nuc*Vc + num*(1-Vc);");
+    }else if(F.scheme==="reuss"){
+      o.push("% Reuss (inverse rule of mixtures) -- compliant lower bound");
+      o.push("E  = 1./(Vc/Ec + (1-Vc)/Em);");
+      o.push("nu = nuc*Vc + num*(1-Vc);");
+    }else{
+      o.push("% Mori-Tanaka: metal matrix with dispersed ceramic inclusions");
+      o.push("Kc = Ec/(3*(1-2*nuc));  Gc = Ec/(2*(1+nuc));");
+      o.push("Km = Em/(3*(1-2*num));  Gm = Em/(2*(1+num));");
+      o.push("fm = Gm*(9*Km + 8*Gm)/(6*(Km + 2*Gm));");
+      o.push("K  = Km + (Kc-Km)*Vc./(1 + (1-Vc)*(Kc-Km)/(Km + 4/3*Gm));");
+      o.push("G  = Gm + (Gc-Gm)*Vc./(1 + (1-Vc)*(Gc-Gm)/(Gm + fm));");
+      o.push("E  = 9*K.*G./(3*K + G);");
+      o.push("nu = (3*K - 2*G)./(2*(3*K + G));");
+    }
+    o.push("rho = rhoc*Vc + rhom*(1-Vc);");
+  }
+  o.push("");
+  o.push("%% ---- Physical neutral surface ------------------------------------");
+  o.push("Eb  = E./(1 - nu.^2);           % plane-strain modulus");
+  o.push("A   = trapz(z, Eb);             % extensional stiffness");
+  o.push("zns = trapz(z, Eb.*z)/A;        % neutral surface, from mid-plane");
+  o.push("D   = trapz(z, Eb.*(z - zns).^2);");
+  o.push("B   = trapz(z, Eb.*(z - zns));  % identically zero by construction");
+  o.push("I0  = trapz(z, rho);            % mass per unit area");
+  o.push("");
+  o.push("fprintf('z_ns = %+.6e m  (%.5f h)\\n', zns, zns/h);");
+  o.push("fprintf('A    = %.6e N/m\\n', A);");
+  o.push("fprintf('D    = %.6e N.m\\n', D);");
+  o.push("fprintf('B    = %.3e  (must be ~0)\\n', B);");
+  o.push("fprintf('I0   = %.6e kg/m^2\\n\\n', I0);");
+  o.push("");
+  var isLevyX=(F.ex0==="S"&&F.ex1==="S"), isLevyY=(F.ey0==="S"&&F.ey1==="S");
+  var ref2=fgmRefFreq(fgmStiffness(F.scheme,F.law,F.n,byId(CERAMICS,F.cer),byId(METALS,F.met),F.h));
+  o.push("nu_avg = mean(nu);              % thickness-averaged Poisson ratio");
+  o.push("");
+  if(isLevyX||isLevyY){
+    var La=isLevyX?"a":"b", Lb=isLevyX?"b":"a";
+    var e0=isLevyX?F.ey0:F.ex0, e1=isLevyX?F.ey1:F.ex1;
+    o.push("%% ---- Natural frequencies: LEVY exact solution --------------------");
+    o.push("%  Boundary conditions " + bcCode() + ". The edges normal to the");
+    o.push("%  " + (isLevyX?"x":"y") + " direction are simply supported, so");
+    o.push("%      w(x,y) = W(" + (isLevyX?"y":"x") + ") * sin(m*pi*" + (isLevyX?"x/a":"y/b") + ")");
+    o.push("%  satisfies them term by term and the PDE collapses to");
+    o.push("%      W'''' - 2*al^2*W'' + (al^4 - lam)*W = 0,   lam = I0*w^2/D");
+    o.push("%  The remaining two edges give a 4x4 determinant. Its roots are");
+    o.push("%  the exact natural frequencies -- no series truncation anywhere.");
+    o.push("");
+    o.push("La = " + La + "; Lb = " + Lb + ";");
+    o.push("bc0 = '" + e0 + "';   bcb = '" + e1 + "';    % S = simple, C = clamped, F = free");
+    o.push("");
+    o.push("froots = [];");
+    o.push("for m = 1:4");
+    o.push("  al = m*pi/La;");
+    o.push("  wsc = sqrt(D/I0)/La^2;");
+    o.push("  wgrid = linspace(1e-3, 90*wsc, 6000);");
+    o.push("  dprev = levyDet(wgrid(1), D, I0, al, Lb, nu_avg, bc0, bcb);");
+    o.push("  for i = 2:numel(wgrid)");
+    o.push("    dcur = levyDet(wgrid(i), D, I0, al, Lb, nu_avg, bc0, bcb);");
+    o.push("    if isfinite(dprev) && isfinite(dcur) && dprev*dcur < 0");
+    o.push("      wr = fzero(@(w) levyDet(w, D, I0, al, Lb, nu_avg, bc0, bcb), ...");
+    o.push("                 [wgrid(i-1) wgrid(i)]);");
+    o.push("      froots(end+1) = wr/(2*pi); %#ok<SAGROW>");
+    o.push("    end");
+    o.push("    dprev = dcur;");
+    o.push("  end");
+    o.push("end");
+    o.push("");
+    o.push("froots = sort(froots);");
+    o.push("fprintf(' Mode      f (Hz)\\n');");
+    o.push("for k = 1:min(8, numel(froots))");
+    o.push("  fprintf('%5d %12.4f\\n', k, froots(k));");
+    o.push("end");
+    o.push("");
+  }else{
+    o.push("%% ---- Natural frequencies: RAYLEIGH-RITZ ---------------------------");
+    o.push("%  Boundary conditions " + bcCode() + ". No pair of opposite edges is");
+    o.push("%  simply supported, so there is no Levy or Navier closed form. This");
+    o.push("%  uses products of characteristic beam functions as admissible");
+    o.push("%  functions -- a 5x5 basis, which is within ~0.1% for clamped edges.");
+    o.push("%  Ritz is a MINIMUM principle: every value is an upper bound.");
+    o.push("");
+    o.push("NT = 5;  NQ = 90;");
+    o.push("famx = beamFamily('" + F.ex0 + "', '" + F.ex1 + "');");
+    o.push("famy = beamFamily('" + F.ey0 + "', '" + F.ey1 + "');");
+    o.push("");
+    o.push("[gx, wgx] = gaussLegendre(NQ);");
+    o.push("xq = 0.5*a*(gx+1); wx = 0.5*a*wgx;");
+    o.push("yq = 0.5*b*(gx+1); wy = 0.5*b*wgx;");
+    o.push("");
+    o.push("X = cell(3,NT); Y = cell(3,NT);");
+    o.push("for m = 1:NT");
+    o.push("  [x0,x1,x2] = beamFun(famx, m, a, xq);  X{1,m}=x0; X{2,m}=x1; X{3,m}=x2;");
+    o.push("  [y0,y1,y2] = beamFun(famy, m, b, yq);  Y{1,m}=y0; Y{2,m}=y1; Y{3,m}=y2;");
+    o.push("end");
+    o.push("IX = @(p,q,i,j) sum(wx .* X{p+1,i} .* X{q+1,j});");
+    o.push("IY = @(p,q,i,j) sum(wy .* Y{p+1,i} .* Y{q+1,j});");
+    o.push("");
+    o.push("N = NT*NT; K = zeros(N); M = zeros(N);");
+    o.push("[ii, jj] = ndgrid(1:NT, 1:NT); ii = ii(:); jj = jj(:);");
+    o.push("for r = 1:N");
+    o.push("  for c = 1:N");
+    o.push("    i1=ii(r); j1=jj(r); k1=ii(c); l1=jj(c);");
+    o.push("    K(r,c) = D*( IX(2,2,i1,k1)*IY(0,0,j1,l1) + IX(0,0,i1,k1)*IY(2,2,j1,l1) ...");
+    o.push("               + nu_avg*(IX(2,0,i1,k1)*IY(0,2,j1,l1) + IX(0,2,i1,k1)*IY(2,0,j1,l1)) ...");
+    o.push("               + 2*(1-nu_avg)*IX(1,1,i1,k1)*IY(1,1,j1,l1) );");
+    o.push("    M(r,c) = I0*IX(0,0,i1,k1)*IY(0,0,j1,l1);");
+    o.push("  end");
+    o.push("end");
+    o.push("K = (K+K.')/2;  M = (M+M.')/2;");
+    o.push("");
+    o.push("ev = sort(real(eig(K, M)));");
+    o.push("ev = ev(ev > 1e-6);");
+    o.push("froots = sqrt(ev)/(2*pi);");
+    o.push("fprintf(' Mode      f (Hz)\\n');");
+    o.push("for k = 1:min(8, numel(froots))");
+    o.push("  fprintf('%5d %12.4f\\n', k, froots(k));");
+    o.push("end");
+    o.push("");
+  }
+  o.push("%% ---- Through-thickness profile ------------------------------------");
+  o.push("figure('Color','w','Position',[100 100 760 460]);");
+  o.push("subplot(1,2,1);");
+  o.push("plot(E/1e9, z/h, 'LineWidth', 1.6); grid on; hold on;");
+  o.push("yline(zns/h, '--', 'neutral surface', 'LineWidth', 1.2);");
+  o.push("xlabel('E(z)  (GPa)'); ylabel('z / h'); title('Modulus');");
+  o.push("subplot(1,2,2);");
+  o.push("plot(rho, z/h, 'LineWidth', 1.6); grid on;");
+  o.push("xlabel('\\rho(z)  (kg/m^3)'); ylabel('z / h'); title('Density');");
+  o.push("");
+  o.push("% Expected from CAE Copilot: z_ns/h = " + (st.zns/F.h).toFixed(6) +
+         ", f1 = " + ref2.f.toFixed(4) + " Hz  (" + bcCode() + ")");
+  o.push("");
+  o.push("%% ================= local functions =================================");
+  if(isLevyX||isLevyY){
+    o.push("function dv = levyDet(w, D, I0, al, L, nu, bc0, bcb)");
+    o.push("%LEVYDET 4x4 boundary determinant for the Levy plate solution.");
+    o.push("s  = sqrt(I0*w^2/D);");
+    o.push("a2 = al^2;");
+    o.push("M  = [bcRows(bc0, levyBasis(0, a2, s), nu, a2);");
+    o.push("      bcRows(bcb, levyBasis(L, a2, s), nu, a2)];");
+    o.push("for i = 1:4");
+    o.push("  nrm = max(abs(M(i,:)));");
+    o.push("  if nrm > 0, M(i,:) = M(i,:)/nrm; end   % keep det in range");
+    o.push("end");
+    o.push("dv = det(M);");
+    o.push("end");
+    o.push("");
+    o.push("function d = levyBasis(y, a2, s)");
+    o.push("%LEVYBASIS d(p,j): (p-1)-th derivative of basis function j at y.");
+    o.push("b1 = sqrt(a2 + s);");
+    o.push("ch = cosh(b1*y); sh = sinh(b1*y);");
+    o.push("c1 = [ch; b1*sh; b1^2*ch; b1^3*sh];");
+    o.push("c2 = [sh; b1*ch; b1^2*sh; b1^3*ch];");
+    o.push("if s > a2");
+    o.push("  b2 = sqrt(s - a2); cc = cos(b2*y); ss = sin(b2*y);");
+    o.push("  c3 = [ cc; -b2*ss; -b2^2*cc;  b2^3*ss];");
+    o.push("  c4 = [ ss;  b2*cc; -b2^2*ss; -b2^3*cc];");
+    o.push("else");
+    o.push("  b2 = sqrt(a2 - s); c2h = cosh(b2*y); s2h = sinh(b2*y);");
+    o.push("  c3 = [c2h; b2*s2h; b2^2*c2h; b2^3*s2h];");
+    o.push("  c4 = [s2h; b2*c2h; b2^2*s2h; b2^3*c2h];");
+    o.push("end");
+    o.push("d = [c1 c2 c3 c4];");
+    o.push("end");
+    o.push("");
+    o.push("function R = bcRows(bc, d, nu, a2)");
+    o.push("%BCROWS Two boundary rows. S: w = 0, M = 0.  C: w = 0, dw/dn = 0.");
+    o.push("%       F: M = 0 and the Kirchhoff effective shear V = 0.");
+    o.push("switch upper(bc)");
+    o.push("  case 'S', R = [d(1,:); d(3,:) - nu*a2*d(1,:)];");
+    o.push("  case 'C', R = [d(1,:); d(2,:)];");
+    o.push("  case 'F', R = [d(3,:) - nu*a2*d(1,:); d(4,:) - (2-nu)*a2*d(2,:)];");
+    o.push("  otherwise, error('Unknown edge condition: %s', bc);");
+    o.push("end");
+    o.push("end");
+  }else{
+    o.push("function fam = beamFamily(e0, e1)");
+    o.push("p = [upper(e0) upper(e1)];");
+    o.push("switch p");
+    o.push("  case 'SS', fam = 'S';");
+    o.push("  case 'CC', fam = 'C';");
+    o.push("  case {'CF','FC'}, fam = 'CF';");
+    o.push("  case 'FF', fam = 'FF';");
+    o.push("  case {'SC','CS'}, fam = 'SC';");
+    o.push("  otherwise, fam = 'SF';");
+    o.push("end");
+    o.push("end");
+    o.push("");
+    o.push("function [X, X1, X2] = beamFun(fam, m, L, x)");
+    o.push("%BEAMFUN Characteristic beam function m and its first two derivatives.");
+    o.push("RCC = [4.730040745 7.853204624 10.995607838 14.137165491 17.278759657];");
+    o.push("RCF = [1.875104069 4.694091133  7.854757438 10.995540734 14.137168391];");
+    o.push("RSC = [3.926602312 7.068582746 10.210176122 13.351768777 16.493361431];");
+    o.push("switch fam");
+    o.push("  case 'S'");
+    o.push("    k = m*pi/L; X = sin(k*x); X1 = k*cos(k*x); X2 = -k^2*sin(k*x);");
+    o.push("  case {'C','CF'}");
+    o.push("    if strcmp(fam,'C'), kL = RCC(m); s = (cosh(kL)-cos(kL))/(sinh(kL)-sin(kL));");
+    o.push("    else,               kL = RCF(m); s = (cosh(kL)+cos(kL))/(sinh(kL)+sin(kL)); end");
+    o.push("    k = kL/L;");
+    o.push("    X  = cosh(k*x)-cos(k*x) - s*(sinh(k*x)-sin(k*x));");
+    o.push("    X1 = k*(sinh(k*x)+sin(k*x) - s*(cosh(k*x)-cos(k*x)));");
+    o.push("    X2 = k^2*(cosh(k*x)+cos(k*x) - s*(sinh(k*x)+sin(k*x)));");
+    o.push("  case 'FF'");
+    o.push("    % m = 1 and 2 are the rigid-body translation and rotation.");
+    o.push("    if m == 1");
+    o.push("      X = ones(size(x)); X1 = zeros(size(x)); X2 = zeros(size(x));");
+    o.push("    elseif m == 2");
+    o.push("      X = sqrt(3)*(1-2*x/L); X1 = -2*sqrt(3)/L*ones(size(x)); X2 = zeros(size(x));");
+    o.push("    else");
+    o.push("      kL = RCC(m-2); k = kL/L;");
+    o.push("      s = (cosh(kL)-cos(kL))/(sinh(kL)-sin(kL));");
+    o.push("      X  = cosh(k*x)+cos(k*x) - s*(sinh(k*x)+sin(k*x));");
+    o.push("      X1 = k*(sinh(k*x)-sin(k*x) - s*(cosh(k*x)+cos(k*x)));");
+    o.push("      X2 = k^2*(cosh(k*x)-cos(k*x) - s*(sinh(k*x)-sin(k*x)));");
+    o.push("    end");
+    o.push("  case 'SC'");
+    o.push("    kL = RSC(m); k = kL/L; s = sin(kL)/sinh(kL);");
+    o.push("    X  = sin(k*x) - s*sinh(k*x);");
+    o.push("    X1 = k*(cos(k*x) - s*cosh(k*x));");
+    o.push("    X2 = k^2*(-sin(k*x) - s*sinh(k*x));");
+    o.push("  otherwise   % 'SF'");
+    o.push("    % m = 1 is the rigid rotation about the pinned edge. Leaving it");
+    o.push("    % out overpredicts the SSSF fundamental by more than 100%.");
+    o.push("    if m == 1");
+    o.push("      X = sqrt(3)*x/L; X1 = sqrt(3)/L*ones(size(x)); X2 = zeros(size(x));");
+    o.push("    else");
+    o.push("      kL = RSC(m-1); k = kL/L; s = sin(kL)/sinh(kL);");
+    o.push("      X  = sin(k*x) + s*sinh(k*x);");
+    o.push("      X1 = k*(cos(k*x) + s*cosh(k*x));");
+    o.push("      X2 = k^2*(-sin(k*x) + s*sinh(k*x));");
+    o.push("    end");
+    o.push("end");
+    o.push("end");
+    o.push("");
+    o.push("function [x, w] = gaussLegendre(n)");
+    o.push("%GAUSSLEGENDRE Nodes and weights on [-1,1] by the Golub-Welsch method.");
+    o.push("i    = 1:n-1;");
+    o.push("beta = i./sqrt(4*i.^2 - 1);");
+    o.push("J    = diag(beta,1) + diag(beta,-1);");
+    o.push("[V, Dg]  = eig(J);");
+    o.push("[x, idx] = sort(diag(Dg));");
+    o.push("w = 2*(V(1,idx).^2).';");
+    o.push("x = x(:); w = w(:);");
+    o.push("end");
+  }
+  return o.join("\n");
+}
+
+/* ======================= SCRIPT GENERATORS: LAMINATE ======================= */
+function genLamAbaqus(ang,abd){
+  var o=[];
+  o.push("# -*- coding: utf-8 -*-");
+  o.push("# Composite laminate " + L.seq + " -- generated by CAE Copilot");
+  o.push("# " + byId(PLIES,L.mat).name + ", ply thickness " + L.ply + " mm");
+  o.push("# Total thickness " + (abd.h*1000).toFixed(4) + " mm over " + abd.n + " plies. Units: SI.");
+  o.push("#");
+  o.push("# CAE Copilot reference values:");
+  o.push("#   D11 = " + eng(abd.D[0][0]) + "   D22 = " + eng(abd.D[1][1]));
+  o.push("#   D12 = " + eng(abd.D[0][1]) + "   D66 = " + eng(abd.D[2][2]));
+  o.push("#   f(1,1) SSSS = " + lamFreq(abd.D, L.rho*abd.h, L.a, L.b, 1, 1).toFixed(4) + " Hz");
+  o.push("");
+  o.push("from abaqus import *");
+  o.push("from abaqusConstants import *");
+  o.push("from caeModules import *");
+  o.push("import mesh");
+  o.push("");
+  o.push("A_LEN = " + L.a + "; B_LEN = " + L.b + "; TPLY = " + (L.ply/1000));
+  o.push("ANGLES = [" + ang.join(", ") + "]");
+  o.push("NMODES = 10");
+  o.push("SEED = " + (Math.min(L.a,L.b)/40).toFixed(5));
+  o.push("");
+  o.push("Mdb()");
+  o.push("mdb.models.changeKey(fromName='Model-1', toName='Laminate')");
+  o.push("m = mdb.models['Laminate']");
+  o.push("");
+  o.push("# ---- Orthotropic ply, lamina engineering constants ---------------");
+  o.push("mat = m.Material(name='Ply')");
+  o.push("mat.Elastic(type=LAMINA, table=((" +
+         (L.E1*1e9).toExponential(4) + ", " + (L.E2*1e9).toExponential(4) + ", " + L.nu +
+         ", " + (L.G12*1e9).toExponential(4) + ", " + (L.G12*1e9).toExponential(4) + ", " +
+         (L.G12*1e9*0.7).toExponential(4) + "), ))");
+  o.push("mat.Density(table=((" + L.rho + ", ), ))");
+  o.push("# Note: G13 assumed = G12 and G23 = 0.7*G12. Replace with measured");
+  o.push("# values if you have them -- they matter for thick laminates.");
+  o.push("");
+  o.push("s = m.ConstrainedSketch(name='sk', sheetSize=2.0*max(A_LEN, B_LEN))");
+  o.push("s.rectangle(point1=(0.0, 0.0), point2=(A_LEN, B_LEN))");
+  o.push("p = m.Part(name='Plate', dimensionality=THREE_D, type=DEFORMABLE_BODY)");
+  o.push("p.BaseShell(sketch=s)");
+  o.push("del m.sketches['sk']");
+  o.push("");
+  o.push("plies = []");
+  o.push("for i, th in enumerate(ANGLES):");
+  o.push("    plies.append(section.SectionLayer(thickness=TPLY, material='Ply',");
+  o.push("                                      orientAngle=th, numIntPts=3,");
+  o.push("                                      plyName='P%d' % (i+1)))");
+  o.push("m.CompositeShellSection(name='LamSec', preIntegrate=OFF,");
+  o.push("                        idealization=NO_IDEALIZATION,");
+  o.push("                        thicknessType=UNIFORM, layup=(),");
+  o.push("                        layupName='Layup', symmetric=False,");
+  o.push("                        thicknessModulus=None, temperature=GRADIENT,");
+  o.push("                        poissonDefinition=DEFAULT,");
+  o.push("                        integrationRule=SIMPSON, layers=tuple(plies))");
+  o.push("p.SectionAssignment(region=Region(faces=p.faces), sectionName='LamSec')");
+  o.push("");
+  o.push("# Ply angles are measured from the part's local 1-direction. Assign a");
+  o.push("# material orientation explicitly if your global axes are not aligned.");
+  o.push("p.MaterialOrientation(region=Region(faces=p.faces),");
+  o.push("                      orientationType=GLOBAL, axis=AXIS_3,");
+  o.push("                      additionalRotationType=ROTATION_NONE, angle=0.0,");
+  o.push("                      stackDirection=STACK_3)");
+  o.push("");
+  o.push("p.seedPart(size=SEED, deviationFactor=0.1, minSizeFactor=0.1)");
+  o.push("p.setElementType(regions=(p.faces, ),");
+  o.push("                 elemTypes=(mesh.ElemType(elemCode=S4R, elemLibrary=STANDARD), ))");
+  o.push("p.generateMesh()");
+  o.push("");
+  o.push("a = m.rootAssembly");
+  o.push("a.DatumCsysByDefault(CARTESIAN)");
+  o.push("inst = a.Instance(name='Plate-1', part=p, dependent=ON)");
+  o.push("");
+  o.push("m.FrequencyStep(name='Modal', previous='Initial',");
+  o.push("                eigensolver=LANCZOS, numEigen=NMODES, normalization=MASS)");
+  o.push("");
+  o.push("tol = 1.0e-6");
+  o.push("eAll = inst.edges.getByBoundingBox(-tol,-tol,-tol, A_LEN+tol, B_LEN+tol, tol)");
+  o.push("a.Set(edges=eAll, name='EdgesAll')");
+  o.push("m.DisplacementBC(name='SSSS', createStepName='Initial',");
+  o.push("                 region=a.sets['EdgesAll'], u1=0.0, u2=0.0, u3=0.0)");
+  o.push("");
+  o.push("job = mdb.Job(name='Laminate', model='Laminate', numCpus=4, numDomains=4)");
+  o.push("job.writeInput(consistencyChecking=OFF)");
+  return o.join("\n");
+}
+function genLamAnsys(ang,abd){
+  var o=[];
+  o.push("! =================================================================");
+  o.push("!  Composite laminate " + L.seq + " -- generated by CAE Copilot");
+  o.push("!  " + byId(PLIES,L.mat).name + ", " + abd.n + " plies at " + L.ply + " mm");
+  o.push("!  Reference f(1,1) = " + lamFreq(abd.D, L.rho*abd.h, L.a, L.b, 1, 1).toFixed(4) + " Hz");
+  o.push("! =================================================================");
+  o.push("FINISH");
+  o.push("/CLEAR,START");
+  o.push("/TITLE,Laminated plate modal analysis");
+  o.push("/PREP7");
+  o.push("");
+  o.push("AA = " + L.a);
+  o.push("BB = " + L.b);
+  o.push("TPLY = " + (L.ply/1000));
+  o.push("NMODE = 10");
+  o.push("ESZ = " + (Math.min(L.a,L.b)/40).toFixed(5));
+  o.push("");
+  o.push("ET,1,SHELL181");
+  o.push("KEYOPT,1,3,2");
+  o.push("KEYOPT,1,8,1              ! store results for all layers");
+  o.push("");
+  o.push("! ---- Orthotropic ply --------------------------------------------");
+  o.push("MP,EX,1,"   + (L.E1*1e9).toExponential(6));
+  o.push("MP,EY,1,"   + (L.E2*1e9).toExponential(6));
+  o.push("MP,EZ,1,"   + (L.E2*1e9).toExponential(6));
+  o.push("MP,PRXY,1," + L.nu);
+  o.push("MP,PRYZ,1,0.45");
+  o.push("MP,PRXZ,1," + L.nu);
+  o.push("MP,GXY,1,"  + (L.G12*1e9).toExponential(6));
+  o.push("MP,GYZ,1,"  + (L.G12*1e9*0.7).toExponential(6));
+  o.push("MP,GXZ,1,"  + (L.G12*1e9).toExponential(6));
+  o.push("MP,DENS,1," + L.rho);
+  o.push("");
+  o.push("! ---- Layup, first SECDATA is the BOTTOM ply ---------------------");
+  o.push("SECTYPE,1,SHELL");
+  ang.forEach(function(t,i){
+    o.push("SECDATA,TPLY,1,"+t+",3        ! ply "+(i+1));
+  });
+  o.push("SECOFFSET,MID");
+  o.push("");
+  o.push("RECTNG,0,AA,0,BB");
+  o.push("ESIZE,ESZ");
+  o.push("MSHKEY,1");
+  o.push("AMESH,ALL");
+  o.push("");
+  o.push("NSEL,S,LOC,X,0");
+  o.push("NSEL,A,LOC,X,AA");
+  o.push("NSEL,A,LOC,Y,0");
+  o.push("NSEL,A,LOC,Y,BB");
+  o.push("D,ALL,UX,0");
+  o.push("D,ALL,UY,0");
+  o.push("D,ALL,UZ,0");
+  o.push("ALLSEL,ALL");
+  o.push("");
+  o.push("FINISH");
+  o.push("/SOLU");
+  o.push("ANTYPE,MODAL");
+  o.push("MODOPT,LANB,NMODE");
+  o.push("MXPAND,NMODE");
+  o.push("SOLVE");
+  o.push("FINISH");
+  o.push("/POST1");
+  o.push("SET,LIST");
+  return o.join("\n");
+}
+function genLamMatlab(ang,abd){
+  var o=[];
+  o.push("%% Classical lamination theory -- ABD matrix and frequencies");
+  o.push("%  Generated by CAE Copilot.  Layup " + L.seq);
+  o.push("%  " + byId(PLIES,L.mat).name);
+  o.push("%  Units: SI (m, kg, s, Pa).");
+  o.push("");
+  o.push("clear; clc;");
+  o.push("");
+  o.push("E1 = " + (L.E1*1e9).toExponential(4) + "; E2 = " + (L.E2*1e9).toExponential(4) + ";");
+  o.push("G12 = " + (L.G12*1e9).toExponential(4) + "; nu12 = " + L.nu + ";");
+  o.push("rho = " + L.rho + "; tply = " + (L.ply/1000) + ";");
+  o.push("a = " + L.a + "; b = " + L.b + ";");
+  o.push("theta = [" + ang.join(" ") + "];      % bottom ply first");
+  o.push("");
+  o.push("nu21 = nu12*E2/E1;");
+  o.push("den  = 1 - nu12*nu21;");
+  o.push("Q = [ E1/den        nu12*E2/den  0");
+  o.push("      nu12*E2/den   E2/den       0");
+  o.push("      0             0            G12 ];");
+  o.push("");
+  o.push("n = numel(theta);");
+  o.push("h = n*tply;");
+  o.push("z = -h/2 + (0:n)*tply;          % ply interface coordinates");
+  o.push("");
+  o.push("A = zeros(3); B = zeros(3); D = zeros(3);");
+  o.push("for k = 1:n");
+  o.push("  c = cosd(theta(k)); s = sind(theta(k));");
+  o.push("  T = [ c^2  s^2  2*c*s");
+  o.push("        s^2  c^2 -2*c*s");
+  o.push("       -c*s  c*s  c^2-s^2 ];      % stress transformation");
+  o.push("  R = diag([1 1 2]);");
+  o.push("  Qbar = T\\Q*R*T/R;               % transformed reduced stiffness");
+  o.push("  A = A + Qbar*(z(k+1)   - z(k));");
+  o.push("  B = B + Qbar*(z(k+1)^2 - z(k)^2)/2;");
+  o.push("  D = D + Qbar*(z(k+1)^3 - z(k)^3)/3;");
+  o.push("end");
+  o.push("");
+  o.push("fprintf('A (N/m):\\n');   disp(A);");
+  o.push("fprintf('B (N):\\n');     disp(B);");
+  o.push("fprintf('D (N.m):\\n');   disp(D);");
+  o.push("");
+  o.push("%% ---- Diagnostics ---------------------------------------------------");
+  o.push("Bnorm  = max(abs(B(:)))/sqrt(A(1,1)*D(1,1));");
+  o.push("aniso  = max(abs([D(1,3) D(2,3)]))/sqrt(D(1,1)*D(2,2));");
+  o.push("fprintf('normalised |B|   = %.4e  (symmetric laminate -> 0)\\n', Bnorm);");
+  o.push("fprintf('D16,D26 / sqrt(D11 D22) = %.4e  (specially orthotropic -> 0)\\n', aniso);");
+  o.push("if Bnorm > 1e-6 || aniso > 0.05");
+  o.push("  warning(['Closed-form frequency below assumes B = 0 and D16 = D26 = 0. ' ...");
+  o.push("           'Those are not satisfied here -- treat the numbers as indicative ' ...");
+  o.push("           'and use an FE model for the real answer.']);");
+  o.push("end");
+  o.push("");
+  o.push("%% ---- Natural frequencies (SSSS, specially orthotropic) --------------");
+  o.push("rhoA = rho*h;");
+  o.push("M = 4; N_ = 4; f = zeros(M,N_);");
+  o.push("for m = 1:M");
+  o.push("  for nn = 1:N_");
+  o.push("    am = m/a; bn = nn/b;");
+  o.push("    num = D(1,1)*am^4 + 2*(D(1,2) + 2*D(3,3))*am^2*bn^2 + D(2,2)*bn^4;");
+  o.push("    f(m,nn) = pi^2*sqrt(num/rhoA)/(2*pi);");
+  o.push("  end");
+  o.push("end");
+  o.push("");
+  o.push("[fs, idx] = sort(f(:));");
+  o.push("[mi, ni]  = ind2sub(size(f), idx);");
+  o.push("fprintf('\\n Mode    m    n     f (Hz)\\n');");
+  o.push("for k = 1:min(10, numel(fs))");
+  o.push("  fprintf('%5d %4d %4d %10.4f\\n', k, mi(k), ni(k), fs(k));");
+  o.push("end");
+  o.push("");
+  o.push("% CAE Copilot reference: f(1,1) = " + lamFreq(abd.D, L.rho*abd.h, L.a, L.b, 1, 1).toFixed(4) + " Hz");
+  return o.join("\n");
+}
+
+/* ======================= SCRIPT GENERATORS: SANDWICH ======================= */
+function genSwAbaqus(r){
+  var o=[];
+  o.push("# -*- coding: utf-8 -*-");
+  o.push("# Sandwich panel -- generated by CAE Copilot");
+  o.push("# Faces " + byId(FACES,W.face).name + " " + W.tf + " mm | Core " + byId(CORES,W.core).name + " " + W.tc + " mm");
+  o.push("# Units: SI. Reference values:");
+  o.push("#   D = " + eng(r.D) + " N.m,  S = " + eng(r.S) + " N/m");
+  o.push("#   f(1,1) shear-corrected = " + r.fs.toFixed(4) + " Hz  (bending-only " + r.fb.toFixed(4) + " Hz)");
+  o.push("#");
+  o.push("# A conventional shell CANNOT represent core shear correctly. This");
+  o.push("# script builds the panel as a 3-layer continuum shell so transverse");
+  o.push("# shear is carried properly. If you use S4R instead, expect the");
+  o.push("# frequency to come out near the bending-only value and be wrong.");
+  o.push("");
+  o.push("from abaqus import *");
+  o.push("from abaqusConstants import *");
+  o.push("from caeModules import *");
+  o.push("import mesh");
+  o.push("");
+  o.push("A_LEN = " + W.a + "; B_LEN = " + W.b);
+  o.push("TF = " + (W.tf/1000) + "; TC = " + (W.tc/1000));
+  o.push("NMODES = 10");
+  o.push("SEED = " + (Math.min(W.a,W.b)/40).toFixed(5));
+  o.push("");
+  o.push("Mdb()");
+  o.push("mdb.models.changeKey(fromName='Model-1', toName='Sandwich')");
+  o.push("m = mdb.models['Sandwich']");
+  o.push("");
+  o.push("face = m.Material(name='Face')");
+  o.push("face.Elastic(table=((" + (W.Ef*1e9).toExponential(4) + ", " + W.nuf + "), ))");
+  o.push("face.Density(table=((" + W.rhof + ", ), ))");
+  o.push("");
+  o.push("# Core modelled as orthotropic: stiff in shear, soft in-plane.");
+  o.push("# Honeycomb in particular has almost no in-plane stiffness -- using");
+  o.push("# an isotropic core is the most common sandwich modelling error.");
+  o.push("core = m.Material(name='Core')");
+  o.push("core.Elastic(type=ENGINEERING_CONSTANTS, table=((");
+  o.push("    " + (W.Ec*1e6*0.01).toExponential(4) + ", " + (W.Ec*1e6*0.01).toExponential(4) + ", " + (W.Ec*1e6).toExponential(4) + ",");
+  o.push("    0.02, 0.02, 0.02,");
+  o.push("    " + (W.Gc*1e6*0.4).toExponential(4) + ", " + (W.Gc*1e6).toExponential(4) + ", " + (W.Gc*1e6).toExponential(4) + "), ))");
+  o.push("core.Density(table=((" + W.rhoc + ", ), ))");
+  o.push("");
+  o.push("s = m.ConstrainedSketch(name='sk', sheetSize=2.0*max(A_LEN, B_LEN))");
+  o.push("s.rectangle(point1=(0.0, 0.0), point2=(A_LEN, B_LEN))");
+  o.push("p = m.Part(name='Panel', dimensionality=THREE_D, type=DEFORMABLE_BODY)");
+  o.push("p.BaseShell(sketch=s)");
+  o.push("del m.sketches['sk']");
+  o.push("");
+  o.push("plies = [");
+  o.push("    section.SectionLayer(thickness=TF, material='Face', orientAngle=0.0, numIntPts=3, plyName='Bottom'),");
+  o.push("    section.SectionLayer(thickness=TC, material='Core', orientAngle=0.0, numIntPts=3, plyName='Core'),");
+  o.push("    section.SectionLayer(thickness=TF, material='Face', orientAngle=0.0, numIntPts=3, plyName='Top'),");
+  o.push("]");
+  o.push("m.CompositeShellSection(name='SwSec', preIntegrate=OFF,");
+  o.push("                        idealization=NO_IDEALIZATION,");
+  o.push("                        thicknessType=UNIFORM, layup=(),");
+  o.push("                        layupName='Sandwich', symmetric=False,");
+  o.push("                        thicknessModulus=None, temperature=GRADIENT,");
+  o.push("                        poissonDefinition=DEFAULT,");
+  o.push("                        integrationRule=SIMPSON, layers=tuple(plies))");
+  o.push("p.SectionAssignment(region=Region(faces=p.faces), sectionName='SwSec')");
+  o.push("");
+  o.push("p.seedPart(size=SEED, deviationFactor=0.1, minSizeFactor=0.1)");
+  o.push("p.setElementType(regions=(p.faces, ),");
+  o.push("                 elemTypes=(mesh.ElemType(elemCode=S4R, elemLibrary=STANDARD), ))");
+  o.push("p.generateMesh()");
+  o.push("");
+  o.push("a = m.rootAssembly");
+  o.push("a.DatumCsysByDefault(CARTESIAN)");
+  o.push("inst = a.Instance(name='Panel-1', part=p, dependent=ON)");
+  o.push("");
+  o.push("m.FrequencyStep(name='Modal', previous='Initial',");
+  o.push("                eigensolver=LANCZOS, numEigen=NMODES, normalization=MASS)");
+  o.push("");
+  o.push("tol = 1.0e-6");
+  o.push("eAll = inst.edges.getByBoundingBox(-tol,-tol,-tol, A_LEN+tol, B_LEN+tol, tol)");
+  o.push("a.Set(edges=eAll, name='EdgesAll')");
+  o.push("m.DisplacementBC(name='SSSS', createStepName='Initial',");
+  o.push("                 region=a.sets['EdgesAll'], u1=0.0, u2=0.0, u3=0.0)");
+  o.push("");
+  o.push("job = mdb.Job(name='Sandwich', model='Sandwich', numCpus=4, numDomains=4)");
+  o.push("job.writeInput(consistencyChecking=OFF)");
+  o.push("print('Compare mode 1 against " + r.fs.toFixed(4) + " Hz, not " + r.fb.toFixed(4) + " Hz')");
+  return o.join("\n");
+}
+function genSwAnsys(r){
+  var o=[];
+  o.push("! =================================================================");
+  o.push("!  Sandwich panel -- generated by CAE Copilot");
+  o.push("!  Faces " + W.tf + " mm | Core " + W.tc + " mm | total " + (r.h*1000).toFixed(2) + " mm");
+  o.push("!  Reference f(1,1) = " + r.fs.toFixed(4) + " Hz shear-corrected");
+  o.push("! =================================================================");
+  o.push("FINISH");
+  o.push("/CLEAR,START");
+  o.push("/TITLE,Sandwich panel modal analysis");
+  o.push("/PREP7");
+  o.push("");
+  o.push("AA = " + W.a);
+  o.push("BB = " + W.b);
+  o.push("TF = " + (W.tf/1000));
+  o.push("TC = " + (W.tc/1000));
+  o.push("NMODE = 10");
+  o.push("ESZ = " + (Math.min(W.a,W.b)/40).toFixed(5));
+  o.push("");
+  o.push("ET,1,SHELL181");
+  o.push("KEYOPT,1,3,2");
+  o.push("KEYOPT,1,8,1");
+  o.push("");
+  o.push("! ---- Face sheets (isotropic) ------------------------------------");
+  o.push("MP,EX,1,"   + (W.Ef*1e9).toExponential(6));
+  o.push("MP,PRXY,1," + W.nuf);
+  o.push("MP,DENS,1," + W.rhof);
+  o.push("");
+  o.push("! ---- Core (orthotropic: weak in-plane, stiff in transverse shear)");
+  o.push("MP,EX,2,"   + (W.Ec*1e6*0.01).toExponential(6));
+  o.push("MP,EY,2,"   + (W.Ec*1e6*0.01).toExponential(6));
+  o.push("MP,EZ,2,"   + (W.Ec*1e6).toExponential(6));
+  o.push("MP,PRXY,2,0.02");
+  o.push("MP,PRYZ,2,0.02");
+  o.push("MP,PRXZ,2,0.02");
+  o.push("MP,GXY,2,"  + (W.Gc*1e6*0.4).toExponential(6));
+  o.push("MP,GYZ,2,"  + (W.Gc*1e6).toExponential(6));
+  o.push("MP,GXZ,2,"  + (W.Gc*1e6).toExponential(6));
+  o.push("MP,DENS,2," + W.rhoc);
+  o.push("");
+  o.push("SECTYPE,1,SHELL");
+  o.push("SECDATA,TF,1,0,3          ! bottom face");
+  o.push("SECDATA,TC,2,0,3          ! core");
+  o.push("SECDATA,TF,1,0,3          ! top face");
+  o.push("SECOFFSET,MID");
+  o.push("");
+  o.push("RECTNG,0,AA,0,BB");
+  o.push("ESIZE,ESZ");
+  o.push("MSHKEY,1");
+  o.push("AMESH,ALL");
+  o.push("");
+  o.push("NSEL,S,LOC,X,0");
+  o.push("NSEL,A,LOC,X,AA");
+  o.push("NSEL,A,LOC,Y,0");
+  o.push("NSEL,A,LOC,Y,BB");
+  o.push("D,ALL,UX,0");
+  o.push("D,ALL,UY,0");
+  o.push("D,ALL,UZ,0");
+  o.push("ALLSEL,ALL");
+  o.push("");
+  o.push("FINISH");
+  o.push("/SOLU");
+  o.push("ANTYPE,MODAL");
+  o.push("MODOPT,LANB,NMODE");
+  o.push("MXPAND,NMODE");
+  o.push("SOLVE");
+  o.push("FINISH");
+  o.push("/POST1");
+  o.push("SET,LIST");
+  return o.join("\n");
+}
+function genSwMatlab(r){
+  var o=[];
+  o.push("%% Sandwich panel -- shear-corrected stiffness, frequency, failure");
+  o.push("%  Generated by CAE Copilot. Units: SI (m, kg, s, Pa).");
+  o.push("%");
+  o.push("%  A sandwich panel is shear-dominated. Classical thin-plate theory");
+  o.push("%  ignores transverse shear and overpredicts both stiffness and");
+  o.push("%  frequency. This script computes both so you can see the gap.");
+  o.push("");
+  o.push("clear; clc; close all;");
+  o.push("");
+  o.push("Ef = " + (W.Ef*1e9).toExponential(4) + "; nuf = " + W.nuf + "; tf = " + (W.tf/1000) + "; rhof = " + W.rhof + ";");
+  o.push("Ec = " + (W.Ec*1e6).toExponential(4) + "; Gc = " + (W.Gc*1e6).toExponential(4) + "; tc = " + (W.tc/1000) + "; rhoc = " + W.rhoc + ";");
+  o.push("sigfy = " + (W.syf*1e6).toExponential(4) + ";   % face yield (Pa)");
+  o.push("taucy = " + (W.tauc*1e6).toExponential(4) + ";   % core shear strength (Pa)");
+  o.push("a = " + W.a + "; b = " + W.b + "; q = " + W.q + ";   % plate and pressure");
+  o.push("");
+  o.push("h = tc + 2*tf;          % total thickness");
+  o.push("d = tc + tf;            % distance between face centroids");
+  o.push("");
+  o.push("%% ---- Section stiffness ---------------------------------------------");
+  o.push("D = Ef*(h^3 - tc^3)/(12*(1-nuf^2)) + Ec*tc^3/(12*(1-0.3^2));");
+  o.push("S = Gc*d^2/tc;          % transverse shear rigidity per unit width");
+  o.push("rhoA = 2*rhof*tf + rhoc*tc;");
+  o.push("");
+  o.push("fprintf('D    = %.5e N.m\\n', D);");
+  o.push("fprintf('S    = %.5e N/m\\n', S);");
+  o.push("fprintf('mass = %.4f kg/m^2\\n\\n', rhoA);");
+  o.push("");
+  o.push("%% ---- Frequencies, with and without shear ---------------------------");
+  o.push("M = 3; N_ = 3;");
+  o.push("fprintf(' m  n    f_bend (Hz)   f_shear (Hz)   error if ignored\\n');");
+  o.push("for m = 1:M");
+  o.push("  for n = 1:N_");
+  o.push("    k2 = pi^2*((m/a)^2 + (n/b)^2);");
+  o.push("    wb = sqrt(D*k2^2/rhoA);");
+  o.push("    ws = sqrt(D*k2^2/(rhoA*(1 + D*k2/S)));");
+  o.push("    fprintf('%2d %2d %13.3f %14.3f %15.1f%%\\n', ...");
+  o.push("            m, n, wb/(2*pi), ws/(2*pi), 100*(wb/ws - 1));");
+  o.push("  end");
+  o.push("end");
+  o.push("fprintf('\\nShear correction grows with mode order -- it is worst exactly\\n');");
+  o.push("fprintf('where you need accuracy for acoustic and NVH work.\\n\\n');");
+  o.push("");
+  o.push("%% ---- Failure checks, simply supported strip -------------------------");
+  o.push("Ls = min(a, b);");
+  o.push("Mmax = q*Ls^2/8;        % per unit width");
+  o.push("Vmax = q*Ls/2;");
+  o.push("");
+  o.push("sig_f = Mmax/(tf*d);    % face stress from the couple");
+  o.push("tau_c = Vmax/d;         % core shear stress");
+  o.push("sig_wr = 0.5*(Ef*Ec*Gc)^(1/3);   % face wrinkling (Hoff/Allen)");
+  o.push("");
+  o.push("fprintf('face stress      = %8.2f MPa   (yield %8.2f MPa)  MS = %+.2f\\n', ...");
+  o.push("        sig_f/1e6, sigfy/1e6, sigfy/sig_f - 1);");
+  o.push("fprintf('core shear       = %8.3f MPa   (allow %8.3f MPa)  MS = %+.2f\\n', ...");
+  o.push("        tau_c/1e6, taucy/1e6, taucy/tau_c - 1);");
+  o.push("fprintf('face wrinkling   = %8.2f MPa critical            MS = %+.2f\\n', ...");
+  o.push("        sig_wr/1e6, sig_wr/sig_f - 1);");
+  o.push("fprintf('\\nWrinkling is a LOCAL instability of the face on the core. It can\\n');");
+  o.push("fprintf('precede yielding by a wide margin and no shell FE model will\\n');");
+  o.push("fprintf('predict it unless you mesh the face buckle explicitly.\\n');");
+  o.push("");
+  o.push("% CAE Copilot reference: f(1,1) = " + r.fs.toFixed(4) + " Hz shear-corrected");
+  return o.join("\n");
+}
+
+/* ======================= RENDER: FGM ======================= */
+/* Stiffness-mass decoupling of a phase pair.
+   Sweeps the whole gradation family and compares how much the bending
+   rigidity moves against how much the areal mass moves. A high ratio means
+   changing n changes stiffness while leaving mass nearly fixed, so any
+   change in frequency or radiation is attributable to stiffness alone.
+   That is a controlled experiment; a low ratio is a confounded one. */
+function pairDecoupling(A,B,h){
+  var ns=[0], i;
+  for(i=0;i<26;i++) ns.push(Math.pow(10,-1+3.4*i/25));
+  ns.push(1e6);
+  var Dv=[], Iv=[];
+  for(i=0;i<ns.length;i++){
+    var st=fgmStiffness(F.scheme,"power",ns[i],A,B,h);
+    Dv.push(st.D); Iv.push(st.I0);
+  }
+  function spread(a){ var mn=Math.min.apply(null,a), mx=Math.max.apply(null,a);
+    return mn>0 ? (mx-mn)/mn : NaN; }
+  var rD=spread(Dv), rI=spread(Iv);
+  return {rD:rD, rI:rI, ratio:(rI>1e-9? rD/rI : Infinity),
+          Er:Math.max(A.E,B.E)/Math.min(A.E,B.E),
+          rr:Math.max(A.rho,B.rho)/Math.min(A.rho,B.rho)};
+}
+function renderPair(cer,met){
+  var d=pairDecoupling(cer,met,F.h);
+  var q = d.ratio>=20 ? ["ok","Excellent"] : d.ratio>=8 ? ["ok","Good"] :
+          d.ratio>=3 ? ["warn","Weak"] : ["err","Confounded"];
+  var rows=[
+    ["Stiffness contrast E<sub>A</sub>/E<sub>B</sub>", d.Er.toFixed(2)+"×"],
+    ["Density contrast ρ<sub>A</sub>/ρ<sub>B</sub>",   d.rr.toFixed(3)+"×"],
+    ["Rigidity varies by",  (100*d.rD).toFixed(0)+"%"],
+    ["Areal mass varies by",(100*d.rI).toFixed(1)+"%"]
+  ];
+  var h="";
+  rows.forEach(function(r){
+    h+='<div class="kv"><span class="k">'+r[0]+'</span><span class="v">'+r[1]+'</span></div>';
+  });
+  h+='<div class="kv"><span class="k">Stiffness–mass decoupling<small>rigidity spread ÷ mass spread</small></span>'+
+     '<span class="v hi">'+(isFinite(d.ratio)?d.ratio.toFixed(1):"∞")+'</span></div>';
+  h+='<div class="flag flag-'+q[0]+'" style="margin-top:12px;"><span class="ico">'+
+     (q[0]==="ok"?"✓":q[0]==="warn"?"!":"✕")+'</span><span><b>'+q[1]+' isolation.</b> '+
+     (d.ratio>=8
+       ? "Varying the gradation index moves stiffness while areal mass stays nearly fixed, so a change in frequency or radiated power is attributable to stiffness alone."
+       : "Stiffness and mass move together across this gradation, so a change in frequency cannot be attributed to either one. Any claim of stiffness-driven behaviour with this pair needs a different argument.")+
+     '</span></div>';
+  el("fgPairMetrics").innerHTML=h;
+  el("fgPairHint").innerHTML="A decoupling ratio above about 8 makes the gradation index a clean single-variable control. Below 3 the two effects are confounded.";
+}
+
+function renderFGM(){
+  var cer=byId(CERAMICS,F.cer), met=byId(METALS,F.met);
+  var st=fgmStiffness(F.scheme,F.law,F.n,cer,met,F.h);
+  drawProfile(st.prof, st.zns/F.h);
+  renderPair(cer,met);
+
+  el("fgZns").textContent=(st.zns/F.h>=0?"+":"")+(st.zns/F.h).toFixed(4);
+  el("fgA11").textContent=eng(st.A,4)+" N/m";
+  el("fgD11").textContent=eng(st.D,4)+" N\u00B7m";
+  el("fgB11").textContent=Math.abs(st.B)<1e-6?"~0 (by construction)":eng(st.B,3);
+  el("fgI0").textContent=st.I0.toFixed(4)+" kg/m\u00B2";
+
+  var nuAvg=0; for(var q=0;q<st.prof.nu.length;q++) nuAvg+=st.prof.nu[q];
+  nuAvg/=st.prof.nu.length;
+  var md=fgmModes(st.D,st.I0,F.a,F.b,nuAvg,F.ex0,F.ex1,F.ey0,F.ey1,6);
+  el("fgF1").textContent = md.f.length ? md.f[0].toFixed(3)+" Hz" : "\u2014";
+  el("fgF6").textContent = md.f.length ? md.f.map(function(v){return v.toFixed(1);}).join(" / ") : "\u2014";
+  el("fgMethodNote").textContent = md.method==="levy"
+    ? "L\u00E9vy exact solution, "+bcCode()
+    : (md.method==="ritz" ? "Rayleigh\u2013Ritz 5\u00D75, "+bcCode() : "\u2014");
+
+  var flags=[];
+  if(md.method==="levy"){
+    flags.push(["ok","\u2713","<b>L\u00E9vy exact solution.</b> One pair of opposite edges is simply supported, so the problem reduces to an ODE solved in closed form. Validated against Leissa to four decimals for every L\u00E9vy case."]);
+  }else if(md.method==="ritz"){
+    flags.push(["warn","i","<b>Rayleigh\u2013Ritz, 5\u00D75 beam functions.</b> No simply supported pair, so there is no closed form. Accuracy is within roughly 0.1% for clamped edges and 0.8% where free edges dominate \u2014 always upper-bound, never below the true value."]);
+  }
+  var ratio=F.h/Math.min(F.a,F.b);
+  if(ratio>0.05) flags.push(["warn","!","<b>h/L = "+ratio.toFixed(3)+"</b> — thick plate. Thin-plate theory overpredicts frequency here; the FE shell script handles shear, this closed form does not."]);
+  else flags.push(["ok","\u2713","h/L = "+ratio.toFixed(4)+" — thin-plate assumptions hold."]);
+  if(Math.abs(st.zns/F.h)>0.02) flags.push(["ok","\u2713","Neutral surface sits "+(100*st.zns/F.h).toFixed(2)+"% of the thickness off mid-plane. Referencing bending here is what makes B vanish."]);
+  else flags.push(["ok","\u2713","Neutral surface is essentially at mid-plane for this gradation."]);
+  if(F.law==="power"&&F.n===0) flags.push(["warn","i","n = 0 is a homogeneous ceramic plate. Useful as a validation case — compare against the classical result."]);
+  el("fgFlags").innerHTML=flags.map(function(f){
+    return '<div class="flag flag-'+f[0]+'"><span class="ico">'+f[1]+'</span><span>'+f[2]+'</span></div>';
+  }).join("");
+
+  // scheme comparison
+  var rows=[["voigt","Voigt","var(--seq3)"],["mt","Mori-Tanaka","var(--seq2)"],["reuss","Reuss","var(--seq1)"]];
+  var vals=rows.map(function(r){
+    var s=fgmStiffness(r[0],F.law,F.n,cer,met,F.h);
+    var mm=fgmModes(s.D,s.I0,F.a,F.b,nuAvg,F.ex0,F.ex1,F.ey0,F.ey1,1);
+    return {name:r[1], D:s.D, f:(mm.f[0]||0), zns:s.zns/F.h, c:r[2]};
+  });
+  var fmax=Math.max.apply(null,vals.map(function(v){return v.f;}));
+  var fmin=Math.min.apply(null,vals.map(function(v){return v.f;}));
+  var html='<div style="display:flex;flex-direction:column;gap:9px;">';
+  vals.forEach(function(v){
+    var w=100*v.f/fmax;
+    html+='<div style="display:grid;grid-template-columns:90px 1fr 92px;gap:10px;align-items:center;font-size:13px;">'+
+      '<span style="color:var(--ink-soft)">'+esc(v.name)+'</span>'+
+      '<span style="background:var(--surface-3);border-radius:3px;height:16px;position:relative;overflow:hidden;">'+
+        '<span style="position:absolute;left:0;top:0;bottom:0;width:'+w.toFixed(1)+'%;background:'+v.c+';border-radius:3px;"></span>'+
+      '</span>'+
+      '<span style="font-family:var(--mono);font-size:12px;text-align:right;font-variant-numeric:tabular-nums;">'+v.f.toFixed(2)+' Hz</span>'+
+      '</div>';
+  });
+  html+='</div>';
+  if(F.law!=="exp"){
+    html+='<p class="hint" style="margin-top:12px;">Spread between bounds: <b>'+(100*(fmax-fmin)/fmin).toFixed(1)+'%</b> in fundamental frequency. Mori&ndash;Tanaka must lie between Voigt and Reuss — if it does not, something is wrong.</p>';
+  }else{
+    html+='<p class="hint" style="margin-top:12px;">The exponential law is defined directly on the property, so all three schemes coincide. Switch to power or sigmoid to see the spread.</p>';
+  }
+  el("fgSchemeTable").innerHTML=html;
+
+  var src = F.solver==="abaqus"?genFgmAbaqus():F.solver==="ansys"?genFgmAnsys():genFgmMatlab();
+  var lang = F.solver==="abaqus"?"py":F.solver==="ansys"?"apdl":"m";
+  el("fgCode").innerHTML=hl(src,lang);
+  el("fgFile").textContent = F.solver==="abaqus"?"fgm_plate.py":F.solver==="ansys"?"fgm_plate.mac":"fgm_plate.m";
+  CODE.fgm=src;
+
+  el("fgLawHint").innerHTML=LAW_HINT[F.law];
+  el("fgNwrap").style.display = F.law==="exp" ? "none" : "";
+  var th=el("fgThinHint");
+  th.innerHTML = ratio>0.05
+    ? "<b>h/L = "+ratio.toFixed(3)+"</b> — thick plate, shear deformation matters."
+    : "h/L = "+ratio.toFixed(4)+" — thin plate.";
+}
+
+/* ======================= RENDER: LAMINATE ======================= */
+function renderLam(){
+  var ang=parseStack(L.seq);
+  var box=el("lamStack");
+  if(!ang){
+    el("lamCount").value="—";
+    box.innerHTML='<div class="flag flag-err"><span class="ico">\u2715</span><span>Could not read that stacking sequence. Try a form like <b>[0/45/-45/90]s</b>.</span></div>';
+    el("lamABD").innerHTML=""; el("lamFlags").innerHTML="";
+    ["lamH","lamM","lamEx","lamEy","lamF1","lamF4"].forEach(function(i){el(i).textContent="—";});
+    el("lamCode").innerHTML='<span class="tk-c"># Fix the stacking sequence to generate a script.</span>';
+    CODE.lam="";
+    return;
+  }
+  el("lamCount").value=ang.length+" plies";
+  var abd=computeABD(ang,L.ply/1000,L.E1,L.E2,L.G12,L.nu);
+
+  // stack viz: colour by |angle|
+  box.innerHTML=ang.map(function(t,i){
+    var frac=Math.min(1,Math.abs(t)/90);
+    var col="color-mix(in srgb, var(--s1) "+(100-frac*72).toFixed(0)+"%, var(--s2))";
+    return '<div class="ply"><span class="ang">'+t+'\u00B0</span>'+
+      '<span class="bar" style="background:'+col+'"></span>'+
+      '<span class="thk">ply '+(ang.length-i)+'</span></div>';
+  }).reverse().join("");
+
+  function mtx(M,name,unit,scale){
+    var s='<div class="mtx-name">'+name+' ('+unit+')</div><table class="mtx"><tbody>';
+    var mx=0;
+    for(var i=0;i<3;i++) for(var j=0;j<3;j++) mx=Math.max(mx,Math.abs(M[i][j]));
+    for(i=0;i<3;i++){
+      s+='<tr>';
+      for(j=0;j<3;j++){
+        var v=M[i][j];
+        var neg = mx>0 && Math.abs(v)/mx < 1e-9;
+        var cls = neg?"zero":((i!==j&&(i===2||j===2)&&Math.abs(v)/(mx||1)>0.01)?"nz":"");
+        s+='<td class="'+cls+'">'+(neg?"0":v.toExponential(3))+'</td>';
+      }
+      s+='</tr>';
+    }
+    return s+'</tbody></table>';
+  }
+  el("lamABD").innerHTML = mtx(abd.A,"A","N/m") + mtx(abd.B,"B","N") + mtx(abd.D,"D","N\u00B7m");
+
+  var maxB=0,i,j;
+  for(i=0;i<3;i++) for(j=0;j<3;j++) maxB=Math.max(maxB,Math.abs(abd.B[i][j]));
+  var Bn = maxB/Math.sqrt(Math.abs(abd.A[0][0]*abd.D[0][0]));
+  var an = Math.max(Math.abs(abd.D[0][2]),Math.abs(abd.D[1][2]))/Math.sqrt(Math.abs(abd.D[0][0]*abd.D[1][1]));
+  var a16 = Math.max(Math.abs(abd.A[0][2]),Math.abs(abd.A[1][2]))/Math.sqrt(Math.abs(abd.A[0][0]*abd.A[1][1]));
+
+  var fl=[];
+  if(Bn<1e-6) fl.push(["ok","\u2713","<b>Symmetric.</b> B = 0, so in-plane and bending response are uncoupled. The laminate will not warp when cured or loaded in tension."]);
+  else fl.push(["warn","!","<b>Not symmetric.</b> Normalised |B| = "+Bn.toExponential(2)+". This laminate couples stretching and bending — it will warp on cure, and the closed-form frequency below does not apply."]);
+  if(a16<1e-6) fl.push(["ok","\u2713","<b>Balanced.</b> A₁₆ = A₂₆ = 0, no extension&ndash;shear coupling."]);
+  else fl.push(["warn","!","<b>Not balanced.</b> A₁₆/A₂₆ present — pulling on this laminate makes it shear."]);
+  if(an<1e-6) fl.push(["ok","\u2713","<b>Specially orthotropic.</b> D₁₆ = D₂₆ = 0, so the closed-form frequency is exact for SSSS."]);
+  else if(an<0.05) fl.push(["ok","\u2713","D₁₆, D₂₆ small (ratio "+an.toFixed(3)+"). Closed-form frequency is a good approximation."]);
+  else fl.push(["warn","!","<b>Bend&ndash;twist coupling.</b> D₁₆/\u221A(D₁₁D₂₂) = "+an.toFixed(3)+". Above about 0.05 the closed-form frequency becomes unreliable — use the FE model."]);
+  el("lamFlags").innerHTML=fl.map(function(f){
+    return '<div class="flag flag-'+f[0]+'"><span class="ico">'+f[1]+'</span><span>'+f[2]+'</span></div>';
+  }).join("");
+
+  var rhoA=L.rho*abd.h;
+  var inv=inv3(abd.A);
+  el("lamH").textContent=(abd.h*1000).toFixed(4)+" mm";
+  el("lamM").textContent=rhoA.toFixed(4)+" kg/m\u00B2";
+  if(inv){
+    el("lamEx").textContent=(1/(inv[0][0]*abd.h)/1e9).toFixed(2)+" GPa";
+    el("lamEy").textContent=(1/(inv[1][1]*abd.h)/1e9).toFixed(2)+" GPa";
+  }
+  el("lamF1").textContent=lamFreq(abd.D,rhoA,L.a,L.b,1,1).toFixed(3)+" Hz";
+  var fl4=[];
+  [[1,1],[1,2],[2,1],[2,2]].forEach(function(p){ fl4.push(lamFreq(abd.D,rhoA,L.a,L.b,p[0],p[1])); });
+  fl4.sort(function(x,y){return x-y;});
+  el("lamF4").textContent=fl4.map(function(v){return v.toFixed(1);}).join(" / ")+" Hz";
+
+  var src = L.solver==="abaqus"?genLamAbaqus(ang,abd):L.solver==="ansys"?genLamAnsys(ang,abd):genLamMatlab(ang,abd);
+  var lang = L.solver==="abaqus"?"py":L.solver==="ansys"?"apdl":"m";
+  el("lamCode").innerHTML=hl(src,lang);
+  el("lamFile").textContent = L.solver==="abaqus"?"laminate.py":L.solver==="ansys"?"laminate.mac":"laminate.m";
+  CODE.lam=src;
+}
+
+/* ======================= RENDER: SANDWICH ======================= */
+function renderSw(){
+  var r=sandwich();
+  el("swH").textContent=(r.h*1000).toFixed(2)+" mm";
+  el("swM").textContent=r.rhoA.toFixed(3)+" kg/m\u00B2";
+  el("swD").textContent=eng(r.D,4)+" N\u00B7m";
+  el("swS").textContent=eng(r.S,4)+" N/m";
+  el("swR").textContent=r.ratio.toFixed(4);
+  el("swF1").textContent=r.fs.toFixed(2);
+  el("swFb").textContent=r.fb.toFixed(3)+" Hz";
+  var errPc=100*(r.fb/r.fs-1);
+  el("swErr").textContent="+"+errPc.toFixed(1)+"% too high";
+
+  var fl=[];
+  if(r.ratio>0.1) fl.push(["warn","!","<b>Strongly shear-dominated</b> (Dk²/S = "+r.ratio.toFixed(3)+"). Any thin-plate or classical shell result for this panel is wrong by "+errPc.toFixed(0)+"%. You must use a shear-deformable formulation."]);
+  else if(r.ratio>0.02) fl.push(["warn","i","Shear is significant (Dk²/S = "+r.ratio.toFixed(3)+"). Ignoring it costs about "+errPc.toFixed(1)+"% on the fundamental frequency, and more on higher modes."]);
+  else fl.push(["ok","\u2713","Shear effect is small here (Dk²/S = "+r.ratio.toFixed(4)+"). Classical theory is adequate for the fundamental mode, but check higher modes."]);
+  var ratioC=r.h/Math.min(W.a,W.b);
+  if(ratioC>0.1) fl.push(["warn","!","Panel is thick relative to span (h/L = "+ratioC.toFixed(3)+"). Treat all closed-form results as indicative and build the FE model."]);
+  el("swFlags").innerHTML=fl.map(function(f){
+    return '<div class="flag flag-'+f[0]+'"><span class="ico">'+f[1]+'</span><span>'+f[2]+'</span></div>';
+  }).join("");
+
+  var modes=[
+    {n:"Face yielding", act:r.sigF, all:r.sigFy, u:"MPa", s:1e6},
+    {n:"Core shear",    act:r.tauC, all:r.tauCy, u:"MPa", s:1e6},
+    {n:"Face wrinkling",act:r.sigF, all:r.sigWr, u:"MPa", s:1e6}
+  ];
+  var worst=null;
+  var h='<div style="display:flex;flex-direction:column;gap:10px;">';
+  modes.forEach(function(m){
+    var ms=m.all/m.act-1;
+    if(worst===null||ms<worst.ms) worst={n:m.n,ms:ms};
+    var pass=ms>0;
+    var util=Math.min(100,100*m.act/m.all);
+    h+='<div>'+
+      '<div style="display:flex;justify-content:space-between;gap:10px;font-size:13.5px;margin-bottom:5px;">'+
+        '<span>'+esc(m.n)+'</span>'+
+        '<span style="font-family:var(--mono);font-size:12px;color:'+(pass?"var(--ok)":"var(--err)")+';font-weight:600;">MS '+(ms>=0?"+":"")+ms.toFixed(2)+'</span>'+
+      '</div>'+
+      '<div style="background:var(--surface-3);border-radius:3px;height:8px;overflow:hidden;">'+
+        '<div style="height:100%;width:'+util.toFixed(1)+'%;background:'+(pass?"var(--ok)":"var(--err)")+';border-radius:3px;"></div>'+
+      '</div>'+
+      '<div style="font-family:var(--mono);font-size:11px;color:var(--ink-faint);margin-top:4px;">'+
+        (m.act/m.s).toFixed(2)+' / '+(m.all/m.s).toFixed(2)+' '+m.u+'</div>'+
+      '</div>';
+  });
+  h+='</div>';
+  if(worst) h+='<div class="flag flag-'+(worst.ms>0?"ok":"err")+'" style="margin-top:14px;"><span class="ico">'+(worst.ms>0?"\u2713":"\u2715")+'</span><span><b>Governing mode: '+esc(worst.n)+'</b>, margin of safety '+(worst.ms>=0?"+":"")+worst.ms.toFixed(2)+'.</span></div>';
+  el("swFail").innerHTML=h;
+
+  var src = W.solver==="abaqus"?genSwAbaqus(r):W.solver==="ansys"?genSwAnsys(r):genSwMatlab(r);
+  var lang = W.solver==="abaqus"?"py":W.solver==="ansys"?"apdl":"m";
+  el("swCode").innerHTML=hl(src,lang);
+  el("swFile").textContent = W.solver==="abaqus"?"sandwich.py":W.solver==="ansys"?"sandwich.mac":"sandwich.m";
+  CODE.sw=src;
+}
+
+var CODE={fgm:"",lam:"",sw:""};
+
+/* ======================= PARAMETRIC STUDY ======================= */
+var SWP={target:"fgm",vari:"n",min:0.1,max:10,steps:25,out:"f1",rows:[],cols:[]};
+
+var SWEEP_TARGETS=[{id:"fgm",name:"FGM",sub:"Graded"},{id:"lam",name:"Laminate",sub:"Layered"},{id:"sw",name:"Sandwich",sub:"Cored"}];
+
+var SWEEP_VARS={
+  fgm:[
+    {id:"n",  name:"Power index n",        unit:"",  def:[0.1,10,25],
+     hint:"The core FGM design variable. Watch the neutral surface rise then fall — it must return toward zero at both homogeneous limits.",
+     set:function(v){F.n=v;}, get:function(){return F.n;}},
+    {id:"h",  name:"Thickness h",          unit:"m", def:[0.002,0.03,20],
+     hint:"Frequency should scale roughly linearly with h for a thin plate, since D grows as h³ and mass as h.",
+     set:function(v){F.h=v;}, get:function(){return F.h;}},
+    {id:"ar", name:"Aspect ratio a/b",     unit:"",  def:[0.5,3,20],
+     hint:"Holds b fixed and varies a. Useful for finding where a mode crossing occurs.",
+     set:function(v){F.a=v*F.b;}, get:function(){return F.a/F.b;}},
+    {id:"lay",name:"FE layer count",       unit:"",  def:[2,40,39],
+     hint:"How many layers your FE section actually needs. Plot \"Layer discretisation error\" against this and read off where it drops under your tolerance — that is the answer, and it is different for every gradation index.",
+     set:function(v){F.layers=Math.max(2,Math.round(v));}, get:function(){return F.layers;}}
+  ],
+  lam:[
+    {id:"ang",name:"Ply angle sweep",      unit:"°", def:[0,90,19],
+     hint:"Rotates every off-axis ply (any ply not at 0° or 90°) together. Shows the classic stiffness-versus-coupling trade.",
+     set:function(v){LAM_ANG_OVERRIDE=v;}, get:function(){return LAM_ANG_OVERRIDE;}},
+    {id:"tply",name:"Ply thickness",       unit:"mm",def:[0.05,0.5,20],
+     hint:"Thickness enters D as the cube, so expect a steep rise in frequency.",
+     set:function(v){L.ply=v;}, get:function(){return L.ply;}},
+    {id:"ar", name:"Aspect ratio a/b",     unit:"",  def:[0.5,3,20],
+     hint:"Holds b fixed and varies a.",
+     set:function(v){L.a=v*L.b;}, get:function(){return L.a/L.b;}}
+  ],
+  sw:[
+    {id:"tc", name:"Core thickness",       unit:"mm",def:[5,60,25],
+     hint:"The defining sandwich trade. Bending stiffness rises fast, but so does the shear penalty — watch the two frequency curves diverge.",
+     set:function(v){W.tc=v;}, get:function(){return W.tc;}},
+    {id:"tf", name:"Face thickness",       unit:"mm",def:[0.2,3,20],
+     hint:"Adds stiffness and mass together. There is usually a clear point of diminishing return.",
+     set:function(v){W.tf=v;}, get:function(){return W.tf;}},
+    {id:"gc", name:"Core shear modulus",   unit:"MPa",def:[5,300,25],
+     hint:"Drives the shear correction directly. As G rises the shear-corrected frequency should approach the bending-only value.",
+     set:function(v){W.Gc=v;}, get:function(){return W.Gc;}},
+    {id:"q",  name:"Applied pressure",     unit:"Pa",def:[500,10000,20],
+     hint:"Failure margins only. Frequencies do not depend on load in a linear analysis — if they move here, something is wrong.",
+     set:function(v){W.q=v;}, get:function(){return W.q;}}
+  ]
+};
+var LAM_ANG_OVERRIDE=null;
+
+var SWEEP_OUTS={
+  fgm:[
+    {id:"f1",  name:"Fundamental frequency", unit:"Hz"},
+    {id:"D",   name:"Bending stiffness D",   unit:"N·m"},
+    {id:"zns", name:"Neutral surface z/h",   unit:"—"},
+    {id:"I0",  name:"Mass per area",         unit:"kg/m²"},
+    {id:"f1L", name:"Frequency, N-layer FE model", unit:"Hz"},
+    {id:"derr",name:"Layer discretisation error",  unit:"%"}
+  ],
+  lam:[
+    {id:"f1",  name:"Fundamental frequency", unit:"Hz"},
+    {id:"D11", name:"D₁₁",                   unit:"N·m"},
+    {id:"D22", name:"D₂₂",                   unit:"N·m"},
+    {id:"bt",  name:"Bend–twist D₁₆/√(D₁₁D₂₂)", unit:"—"},
+    {id:"m",   name:"Mass per area",         unit:"kg/m²"}
+  ],
+  sw:[
+    {id:"fs",  name:"Frequency (shear-corrected)", unit:"Hz"},
+    {id:"fb",  name:"Frequency (bending only)",    unit:"Hz"},
+    {id:"err", name:"Shear error if ignored",      unit:"%"},
+    {id:"D",   name:"Flexural rigidity D",         unit:"N·m"},
+    {id:"ms",  name:"Governing margin of safety",  unit:"—"},
+    {id:"m",   name:"Mass per area",               unit:"kg/m²"}
+  ]
+};
+
+function snapshot(){ return {F:JSON.parse(JSON.stringify(F)),L:JSON.parse(JSON.stringify(L)),W:JSON.parse(JSON.stringify(W)),ov:LAM_ANG_OVERRIDE}; }
+function restore(s){
+  var k;
+  for(k in s.F) F[k]=s.F[k];
+  for(k in s.L) L[k]=s.L[k];
+  for(k in s.W) W[k]=s.W[k];
+  LAM_ANG_OVERRIDE=s.ov;
+}
+/* Stiffness of the LAYERED approximation actually built in the FE deck.
+   Each layer is homogenised at its mid-layer volume fraction and integrated
+   exactly across its own thickness. Comparing this against the continuous
+   integration is a genuine convergence study: it tells you how many layers
+   your ABAQUS or ANSYS section needs. */
+function fgmLayeredStiffness(){
+  var lay=fgmLayers(), i;
+  var A=0, m1=0, I0=0, z=-F.h/2;
+  var zs=[];
+  for(i=0;i<lay.length;i++){
+    var t=lay[i].t, z0=z, z1=z+t; z=z1; zs.push([z0,z1]);
+    var Eb=lay[i].E/(1-lay[i].nu*lay[i].nu);
+    A  += Eb*(z1-z0);
+    m1 += Eb*(z1*z1-z0*z0)/2;
+    I0 += lay[i].rho*t;
+  }
+  var zns=m1/A, D=0;
+  for(i=0;i<lay.length;i++){
+    var Eb2=lay[i].E/(1-lay[i].nu*lay[i].nu);
+    var p0=zs[i][0]-zns, p1=zs[i][1]-zns;
+    D += Eb2*(p1*p1*p1-p0*p0*p0)/3;
+  }
+  return {A:A,D:D,zns:zns,I0:I0};
+}
+function evalFGM(){
+  var cer=byId(CERAMICS,F.cer), met=byId(METALS,F.met);
+  var st=fgmStiffness(F.scheme,F.law,F.n,cer,met,F.h);
+  var nuA=0,q; for(q=0;q<st.prof.nu.length;q++) nuA+=st.prof.nu[q]; nuA/=st.prof.nu.length;
+  var md=fgmModes(st.D,st.I0,F.a,F.b,nuA,F.ex0,F.ex1,F.ey0,F.ey1,1);
+  var ly=fgmLayeredStiffness();
+  var mdL=fgmModes(ly.D,ly.I0,F.a,F.b,nuA,F.ex0,F.ex1,F.ey0,F.ey1,1);
+  var f1=(md.f[0]||NaN), f1L=(mdL.f[0]||NaN);
+  return {f1:f1, D:st.D, zns:st.zns/F.h, I0:st.I0,
+          f1L:f1L, derr:100*Math.abs(f1L-f1)/f1};
+}
+function evalLAM(){
+  var ang=parseStack(L.seq);
+  if(!ang) return null;
+  if(LAM_ANG_OVERRIDE!==null){
+    ang=ang.map(function(t){
+      var at=Math.abs(t);
+      if(at<1e-9||Math.abs(at-90)<1e-9) return t;      // keep 0 and 90 fixed
+      return (t<0?-1:1)*LAM_ANG_OVERRIDE;
+    });
+  }
+  var abd=computeABD(ang,L.ply/1000,L.E1,L.E2,L.G12,L.nu);
+  var rhoA=L.rho*abd.h;
+  var bt=Math.max(Math.abs(abd.D[0][2]),Math.abs(abd.D[1][2]))/Math.sqrt(Math.abs(abd.D[0][0]*abd.D[1][1]));
+  return {f1:lamFreq(abd.D,rhoA,L.a,L.b,1,1), D11:abd.D[0][0], D22:abd.D[1][1], bt:bt, m:rhoA};
+}
+function evalSW(){
+  var r=sandwich();
+  var modes=[r.sigFy/r.sigF-1, r.tauCy/r.tauC-1, r.sigWr/r.sigF-1];
+  return {fs:r.fs, fb:r.fb, err:100*(r.fb/r.fs-1), D:r.D, ms:Math.min.apply(null,modes), m:r.rhoA};
+}
+function runSweep(){
+  var vars=SWEEP_VARS[SWP.target], outs=SWEEP_OUTS[SWP.target];
+  var vd=null,i;
+  for(i=0;i<vars.length;i++) if(vars[i].id===SWP.vari) vd=vars[i];
+  if(!vd) { vd=vars[0]; SWP.vari=vd.id; }
+  var n=Math.max(3,Math.min(200,Math.round(SWP.steps)));
+  var snap=snapshot(), rows=[];
+  for(i=0;i<n;i++){
+    var v=SWP.min+(SWP.max-SWP.min)*i/(n-1);
+    vd.set(v);
+    var r=null;
+    try{
+      r = SWP.target==="fgm" ? evalFGM() : SWP.target==="lam" ? evalLAM() : evalSW();
+    }catch(e){ r=null; }
+    if(r){ r.__x=vd.get(); rows.push(r); }
+  }
+  restore(snap);
+  SWP.rows=rows; SWP.cols=outs; SWP.vd=vd;
+  return rows;
+}
+
+function svgLine(hostId,xs,ys,xlab,ylab,color){
+  var svg=el(hostId);
+  var W_=520,H_=320,ml=68,mr=22,mt=16,mb=48;
+  var pw=W_-ml-mr, ph=H_-mt-mb;
+  // Drop any point the model could not evaluate rather than poisoning the axes.
+  var cx=[],cy=[],ci;
+  for(ci=0;ci<xs.length;ci++) if(isFinite(xs[ci])&&isFinite(ys[ci])){ cx.push(xs[ci]); cy.push(ys[ci]); }
+  xs=cx; ys=cy;
+  if(xs.length<2){
+    svg.innerHTML='<text class="ax-txt" x="'+(W_/2)+'" y="'+(H_/2)+'" text-anchor="middle">'+
+      'no evaluable points in this range</text>';
+    return;
+  }
+  var x0=Math.min.apply(null,xs), x1=Math.max.apply(null,xs);
+  var y0=Math.min.apply(null,ys), y1=Math.max.apply(null,ys);
+  if(x1===x0) x1=x0+1;
+  var pad=(y1-y0)*0.08; if(pad===0) pad=Math.abs(y0)*0.08||1;
+  y0-=pad; y1+=pad;
+  function X(v){ return ml+(v-x0)/(x1-x0)*pw; }
+  function Y(v){ return mt+ph-(v-y0)/(y1-y0)*ph; }
+  function tick(v){
+    var a=Math.abs(v);
+    if(a===0) return "0";
+    if(a>=1e5||a<1e-3) return v.toExponential(1);
+    return parseFloat(v.toPrecision(4)).toString();
+  }
+  var g=[],i;
+  for(i=0;i<=4;i++){
+    var yv=y0+(y1-y0)*i/4;
+    g.push('<line class="grid-line" x1="'+ml+'" y1="'+Y(yv).toFixed(1)+'" x2="'+(ml+pw)+'" y2="'+Y(yv).toFixed(1)+'"/>');
+    g.push('<text class="ax-txt" x="'+(ml-8)+'" y="'+(Y(yv)+3.5).toFixed(1)+'" text-anchor="end">'+tick(yv)+'</text>');
+  }
+  for(i=0;i<=4;i++){
+    var xv=x0+(x1-x0)*i/4;
+    g.push('<line class="grid-line" x1="'+X(xv).toFixed(1)+'" y1="'+mt+'" x2="'+X(xv).toFixed(1)+'" y2="'+(mt+ph)+'"/>');
+    g.push('<text class="ax-txt" x="'+X(xv).toFixed(1)+'" y="'+(mt+ph+16)+'" text-anchor="middle">'+tick(xv)+'</text>');
+  }
+  g.push('<line class="ax-line" x1="'+ml+'" y1="'+mt+'" x2="'+ml+'" y2="'+(mt+ph)+'"/>');
+  g.push('<line class="ax-line" x1="'+ml+'" y1="'+(mt+ph)+'" x2="'+(ml+pw)+'" y2="'+(mt+ph)+'"/>');
+  var pts=[];
+  for(i=0;i<xs.length;i++) pts.push(X(xs[i]).toFixed(1)+","+Y(ys[i]).toFixed(1));
+  g.push('<polyline fill="none" stroke="'+color+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="'+pts.join(" ")+'"/>');
+  // endpoint emphasis
+  g.push('<circle cx="'+X(xs[xs.length-1]).toFixed(1)+'" cy="'+Y(ys[ys.length-1]).toFixed(1)+'" r="4" fill="'+color+'" stroke="var(--surface)" stroke-width="2"/>');
+  g.push('<circle cx="'+X(xs[0]).toFixed(1)+'" cy="'+Y(ys[0]).toFixed(1)+'" r="3" fill="var(--surface)" stroke="'+color+'" stroke-width="2"/>');
+  g.push('<text class="ax-lab" x="'+(ml+pw/2)+'" y="'+(H_-8)+'" text-anchor="middle">'+esc(xlab)+'</text>');
+  g.push('<text class="ax-lab" transform="translate(15,'+(mt+ph/2)+') rotate(-90)" text-anchor="middle">'+esc(ylab)+'</text>');
+  svg.innerHTML=g.join("");
+}
+
+function sweepCSV(){
+  var vd=SWP.vd, outs=SWP.cols;
+  var head=[vd.name+(vd.unit?" ("+vd.unit+")":"")].concat(outs.map(function(o){
+    return o.name.replace(/[₀₁₂₆]/g,function(c){return {"₀":"0","₁":"1","₂":"2","₆":"6"}[c];})+(o.unit&&o.unit!=="—"?" ("+o.unit+")":"");}));
+  var lines=[head.join(",")];
+  SWP.rows.forEach(function(r){
+    var cells=[r.__x];
+    outs.forEach(function(o){ cells.push(r[o.id]); });
+    lines.push(cells.map(function(v){ return (typeof v==="number"&&isFinite(v))?v.toPrecision(8):""; }).join(","));
+  });
+  return lines.join("\n");
+}
+function sweepTeX(){
+  var vd=SWP.vd, outs=SWP.cols;
+  var o=[];
+  o.push("% Generated by CAE Copilot. Requires \\usepackage{booktabs}");
+  o.push("\\begin{table}[htbp]");
+  o.push("\\centering");
+  o.push("\\caption{Effect of "+vd.name.toLowerCase()+" on the "+
+         (SWP.target==="fgm"?"functionally graded":SWP.target==="lam"?"laminated":"sandwich")+" plate response.}");
+  o.push("\\begin{tabular}{"+new Array(outs.length+2).join("r")+"r}");
+  o.push("\\toprule");
+  o.push(vd.name+" & "+outs.map(function(x){return x.name;}).join(" & ")+" \\\\");
+  o.push("\\midrule");
+  var step=Math.max(1,Math.ceil(SWP.rows.length/12));
+  for(var i=0;i<SWP.rows.length;i+=step){
+    var r=SWP.rows[i], cells=[fmt(r.__x,4)];
+    outs.forEach(function(x){ cells.push(fmt(r[x.id],4)); });
+    o.push(cells.join(" & ")+" \\\\");
+  }
+  o.push("\\bottomrule");
+  o.push("\\end{tabular}");
+  o.push("\\end{table}");
+  return o.join("\n");
+}
+
+function renderSweep(){
+  var rows=runSweep();
+  var vd=SWP.vd, outs=SWP.cols;
+  var od=null,i;
+  for(i=0;i<outs.length;i++) if(outs[i].id===SWP.out) od=outs[i];
+  if(!od){ od=outs[0]; SWP.out=od.id; }
+
+  var xs=rows.map(function(r){return r.__x;});
+  var ys=rows.map(function(r){return r[od.id];});
+  var xlab=vd.name+(vd.unit?" ("+vd.unit+")":"");
+  var ylab=od.name+(od.unit&&od.unit!=="—"?" ("+od.unit+")":"");
+  svgLine("swpPlot",xs,ys,xlab,ylab,"var(--s1)");
+  el("swpTitle").textContent=od.name+" vs "+vd.name.toLowerCase();
+  el("swpLegend").textContent=ylab;
+
+  var fin=ys.filter(function(v){return isFinite(v);});
+  var mn=fin.length?Math.min.apply(null,fin):NaN, mx=fin.length?Math.max.apply(null,fin):NaN;
+  var first=fin.length?fin[0]:NaN, last=fin.length?fin[fin.length-1]:NaN;
+  var chg=(isFinite(first)&&isFinite(last)&&first!==0)?((last/first-1)*100).toFixed(1)+"%":"—";
+  var stats=[["Minimum",fmt(mn,4)],["Maximum",fmt(mx,4)],
+             ["Change over range",chg],
+             ["Points",fin.length+(fin.length<rows.length?" of "+rows.length:"")]];
+  el("swpStats").innerHTML=stats.map(function(s){
+    return '<div><div class="label" style="margin-bottom:4px;">'+esc(s[0])+'</div>'+
+      '<div style="font-family:var(--mono);font-size:15px;font-weight:500;font-variant-numeric:tabular-nums;">'+esc(s[1])+'</div></div>';
+  }).join("");
+
+  var th='<thead><tr><th>'+esc(vd.name)+'</th>'+outs.map(function(o){return '<th>'+esc(o.name)+'</th>';}).join("")+'</tr></thead><tbody>';
+  var step=Math.max(1,Math.ceil(rows.length/40));
+  for(i=0;i<rows.length;i+=step){
+    var r=rows[i];
+    th+='<tr><td>'+fmt(r.__x,4)+'</td>'+outs.map(function(o){
+      return '<td'+(o.id===SWP.out?' style="color:var(--accent);font-weight:500"':'')+'>'+fmt(r[o.id],4)+'</td>';}).join("")+'</tr>';
+  }
+  el("swpTable").innerHTML=th+'</tbody>';
+
+  // monotonicity / sanity reading
+  var mono=true, dir=0;
+  for(i=1;i<ys.length;i++){
+    if(!isFinite(ys[i])||!isFinite(ys[i-1])) continue;
+    var d=Math.sign(ys[i]-ys[i-1]);
+    if(d!==0){ if(dir===0) dir=d; else if(d!==dir){ mono=false; break; } }
+  }
+  var read="<p style='margin:0 0 10px'>"+esc(vd.hint)+"</p>";
+  read+="<p style='margin:0'>Over this range the response is <b>"+
+        (mono?(dir>0?"monotonically increasing":"monotonically decreasing"):"non-monotonic — there is a turning point inside the range")+
+        "</b>. "+(mono
+          ? "A clean monotonic trend is what you expect from most stiffness and mass variables; a kink usually means a mode has crossed."
+          : "Turning points are the interesting part of a design study — that is where an optimum or a mode crossing sits.")+"</p>";
+  el("swpRead").innerHTML=read;
+}
+
+/* ======================= UI WIRING ======================= */
+function seg(hostId,items,getSel,onPick){
+  var host=el(hostId); host.innerHTML="";
+  items.forEach(function(it){
+    var b=document.createElement("button");
+    b.className="segbtn"; b.type="button";
+    b.setAttribute("aria-pressed", getSel()===it.id?"true":"false");
+    b.innerHTML=esc(it.name)+(it.sub?"<small>"+esc(it.sub)+"</small>":"");
+    b.onclick=function(){ onPick(it.id); };
+    host.appendChild(b);
+  });
+}
+function fillSel(id,arr,val){
+  el(id).innerHTML=arr.map(function(m){return '<option value="'+m.id+'">'+esc(m.name)+'</option>';}).join("");
+  el(id).value=val;
+}
+
+function refreshFGM(){
+  seg("fgLawSeg",LAWS,function(){return F.law;},function(v){F.law=v;refreshFGM();});
+  seg("fgSchemeSeg",SCHEMES,function(){return F.scheme;},function(v){F.scheme=v;refreshFGM();});
+  seg("fgSolverSeg",SOLVERS,function(){return F.solver;},function(v){F.solver=v;refreshFGM();});
+  seg("fgBcPresets",BC_PRESETS,function(){return bcCode();},function(v){applyPreset(v);refreshFGM();});
+  ["fgEx0:ex0","fgEx1:ex1","fgEy0:ey0","fgEy1:ey1"].forEach(function(p){
+    var q=p.split(":");
+    el(q[0]).innerHTML=EDGE_OPTS.map(function(o){
+      return '<option value="'+o.id+'">'+esc(o.name)+'</option>';}).join("");
+    el(q[0]).value=F[q[1]];
+  });
+  var nFree=[F.ex0,F.ex1,F.ey0,F.ey1].filter(function(e){return e==="F";}).length;
+  var hint=el("fgBcHint");
+  if(nFree>=3) hint.innerHTML="<b>Three or more free edges.</b> The plate is close to unrestrained — expect very low frequencies and check the FE model for rigid-body modes.";
+  else if(F.ex0==="S"&&F.ex1==="S") hint.innerHTML="Lévy applies: the x-edges are simply supported, so the solution is <b>exact</b>.";
+  else if(F.ey0==="S"&&F.ey1==="S") hint.innerHTML="Lévy applies: the y-edges are simply supported, so the solution is <b>exact</b>.";
+  else hint.innerHTML="No simply supported pair, so no closed form exists. Falls back to <b>Rayleigh–Ritz</b>, which is an upper bound.";
+  renderFGM();
+}
+function refreshLam(){
+  seg("lamSolverSeg",SOLVERS,function(){return L.solver;},function(v){L.solver=v;refreshLam();});
+  renderLam();
+}
+function refreshSw(){
+  seg("swSolverSeg",SOLVERS,function(){return W.solver;},function(v){W.solver=v;refreshSw();});
+  renderSw();
+}
+function refreshSweep(resetRange){
+  seg("swpTargetSeg",SWEEP_TARGETS,function(){return SWP.target;},function(v){
+    SWP.target=v;
+    SWP.vari=SWEEP_VARS[v][0].id;
+    SWP.out=SWEEP_OUTS[v][0].id;
+    refreshSweep(true);
+  });
+  var vars=SWEEP_VARS[SWP.target], outs=SWEEP_OUTS[SWP.target];
+  el("swpVar").innerHTML=vars.map(function(v){
+    return '<option value="'+v.id+'">'+esc(v.name)+(v.unit?" ("+v.unit+")":"")+'</option>';}).join("");
+  el("swpVar").value=SWP.vari;
+  el("swpOut").innerHTML=outs.map(function(o){
+    return '<option value="'+o.id+'">'+esc(o.name)+'</option>';}).join("");
+  el("swpOut").value=SWP.out;
+  var vd=null,i;
+  for(i=0;i<vars.length;i++) if(vars[i].id===SWP.vari) vd=vars[i];
+  if(resetRange&&vd){ SWP.min=vd.def[0]; SWP.max=vd.def[1]; SWP.steps=vd.def[2];
+    el("swpMin").value=SWP.min; el("swpMax").value=SWP.max; el("swpN").value=SWP.steps; }
+  el("swpVarHint").textContent = vd ? vd.hint : "";
+  renderSweep();
+}
+
+fillSel("fgCer",CERAMICS,F.cer);
+fillSel("fgMet",METALS,F.met);
+fillSel("lamMat",PLIES,L.mat);
+fillSel("swFaceMat",FACES,W.face);
+fillSel("swCoreMat",CORES,W.core);
+
+el("fgCer").onchange=function(){F.cer=this.value;refreshFGM();};
+el("fgMet").onchange=function(){F.met=this.value;refreshFGM();};
+["fgEx0:ex0","fgEx1:ex1","fgEy0:ey0","fgEy1:ey1"].forEach(function(p){
+  var q=p.split(":");
+  el(q[0]).addEventListener("change",function(){ F[q[1]]=this.value; refreshFGM(); });
+});
+[["fgN","n"],["fgLayers","layers"],["fgA","a"],["fgB","b"],["fgH","h"]].forEach(function(p){
+  el(p[0]).addEventListener("input",function(){
+    var v=parseFloat(this.value);
+    if(!isNaN(v)){ F[p[1]] = (p[1]==="layers") ? Math.max(2,Math.round(v)) : v; refreshFGM(); }
+  });
+});
+
+el("lamMat").onchange=function(){
+  var m=byId(PLIES,this.value); L.mat=m.id;
+  L.E1=m.E1; L.E2=m.E2; L.G12=m.G12; L.nu=m.nu; L.rho=m.rho;
+  el("lamE1").value=m.E1; el("lamE2").value=m.E2; el("lamG12").value=m.G12;
+  el("lamNu").value=m.nu; el("lamRho").value=m.rho;
+  refreshLam();
+};
+el("lamSeq").addEventListener("input",function(){ L.seq=this.value; refreshLam(); });
+[["lamPly","ply"],["lamE1","E1"],["lamE2","E2"],["lamG12","G12"],["lamNu","nu"],["lamRho","rho"],["lamA","a"],["lamB","b"]].forEach(function(p){
+  el(p[0]).addEventListener("input",function(){
+    var v=parseFloat(this.value); if(!isNaN(v)){ L[p[1]]=v; refreshLam(); }
+  });
+});
+
+el("swFaceMat").onchange=function(){
+  var m=byId(FACES,this.value); W.face=m.id;
+  W.Ef=m.E; W.nuf=m.nu; W.rhof=m.rho; W.syf=m.sy;
+  el("swEf").value=m.E; el("swNuf").value=m.nu; el("swRhof").value=m.rho; el("swSyf").value=m.sy;
+  refreshSw();
+};
+el("swCoreMat").onchange=function(){
+  var m=byId(CORES,this.value); W.core=m.id;
+  W.Ec=m.E; W.Gc=m.G; W.rhoc=m.rho; W.tauc=m.tau;
+  el("swEc").value=m.E; el("swGc").value=m.G; el("swRhoc").value=m.rho; el("swTauc").value=m.tau;
+  refreshSw();
+};
+[["swEf","Ef"],["swNuf","nuf"],["swTf","tf"],["swRhof","rhof"],["swSyf","syf"],
+ ["swEc","Ec"],["swGc","Gc"],["swTc","tc"],["swRhoc","rhoc"],["swTauc","tauc"],
+ ["swA","a"],["swB","b"],["swQ","q"]].forEach(function(p){
+  el(p[0]).addEventListener("input",function(){
+    var v=parseFloat(this.value); if(!isNaN(v)){ W[p[1]]=v; refreshSw(); }
+  });
+});
+
+Array.prototype.forEach.call(document.querySelectorAll(".tab"),function(t){
+  t.addEventListener("click",function(){
+    Array.prototype.forEach.call(document.querySelectorAll(".tab"),function(x){x.setAttribute("aria-selected","false");});
+    t.setAttribute("aria-selected","true");
+    Array.prototype.forEach.call(document.querySelectorAll(".panel"),function(p){p.hidden=true;});
+    el(t.dataset.panel).hidden=false;
+  });
+});
+
+Array.prototype.forEach.call(document.querySelectorAll("[data-copy]"),function(b){
+  b.addEventListener("click",function(){
+    var src=CODE[b.dataset.copy]; if(!src) return;
+    function done(ok){ b.textContent=ok?"Copied":"Ctrl+C"; setTimeout(function(){b.textContent="Copy";},1500); }
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(src).then(function(){done(true);},function(){done(false);});
+    }else{
+      var ta=document.createElement("textarea"); ta.value=src;
+      ta.style.position="fixed"; ta.style.opacity="0";
+      document.body.appendChild(ta); ta.select();
+      try{ document.execCommand("copy"); done(true); }catch(e){ done(false); }
+      document.body.removeChild(ta);
+    }
+  });
+});
+
+if(window.claude&&window.claude.use){
+  window.claude.use("downloads").then(function(dl){
+    if(!dl) return;
+    Array.prototype.forEach.call(document.querySelectorAll("[data-save]"),function(b){
+      b.hidden=false;
+      b.addEventListener("click",function(){
+        var key=b.dataset.save, src=CODE[key]; if(!src) return;
+        var base={fgm:"fgm_plate",lam:"laminate",sw:"sandwich"}[key];
+        b.textContent="Saving...";
+        dl.save({filename:base+".txt",data:src}).then(function(){
+          b.textContent="Saved"; setTimeout(function(){b.textContent="Save";},1600);
+        },function(){ b.textContent="Save"; });
+      });
+    });
+    var cb=el("swpSaveCsv");
+    cb.hidden=false;
+    cb.addEventListener("click",function(){
+      var name="sweep_"+SWP.target+"_"+SWP.vari+".csv";
+      cb.textContent="Saving...";
+      dl.save({filename:name,data:sweepCSV()}).then(function(){
+        cb.textContent="Saved"; setTimeout(function(){cb.textContent="Download .csv";},1700);
+      },function(){ cb.textContent="Download .csv"; });
+    });
+  },function(){});
+}
+
+el("swpVar").addEventListener("change",function(){ SWP.vari=this.value; refreshSweep(true); });
+el("swpOut").addEventListener("change",function(){ SWP.out=this.value; renderSweep(); });
+[["swpMin","min"],["swpMax","max"],["swpN","steps"]].forEach(function(p){
+  el(p[0]).addEventListener("input",function(){
+    var v=parseFloat(this.value); if(!isNaN(v)){ SWP[p[1]]=v; renderSweep(); }
+  });
+});
+function copyText(btn,txt,okLabel){
+  var orig=btn.textContent;
+  function done(ok){ btn.textContent=ok?okLabel:"Press Ctrl+C";
+    setTimeout(function(){btn.textContent=orig;},1600); }
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(function(){done(true);},function(){done(false);});
+  }else{
+    var ta=document.createElement("textarea"); ta.value=txt;
+    ta.style.position="fixed"; ta.style.opacity="0";
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand("copy"); done(true); }catch(e){ done(false); }
+    document.body.removeChild(ta);
+  }
+}
+el("swpCopyCsv").addEventListener("click",function(){ copyText(this,sweepCSV(),"Copied"); });
+el("swpCopyTex").addEventListener("click",function(){ copyText(this,sweepTeX(),"Copied"); });
+
+refreshFGM(); refreshLam(); refreshSw(); refreshSweep(true);
+})();
+</script>
+</body>
+</html>

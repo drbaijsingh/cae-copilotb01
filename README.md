@@ -1,161 +1,114 @@
-# cae-copilotb01
-Free browser tool for structural CAE. Generates runnable ABAQUS, ANSYS, LS-DYNA and MATLAB scripts, diagnoses solver errors, and analyses functionally graded, laminated and sandwich plates. Validated against Leissa to 0.03%.
-CAE Copilot
-A validated, browser-based toolkit for structural CAE and plate vibroacoustics. Free. No installation, no login, no data leaves your machine.
+# CAE Copilot — your own website
 
-Built by Dr. Baij Nath Singh — PhD in Mechanical Engineering (Vibroacoustics), IIT (ISM) Dhanbad.
+Three HTML files. No build step, no server, no dependencies, no database.
+Put them anywhere that serves files and you have a working public website.
 
+```
+index.html      the landing page (start here)
+copilot.html    Script Builder, Error Doctor, Setup Advisor, Materials reference
+materials.html  FGM, laminate, sandwich, parametric study
+.nojekyll       tells GitHub not to interfere with the files
+```
 
-What it does
-Script Builder
-Describe a plate problem once — geometry, material, boundary conditions, mesh — and get a commented, runnable script for the solver you use.
+The pages link to each other with plain relative paths, so the whole folder
+works as-is — on a web host, on a USB stick, or by double-clicking `index.html`
+on your own machine.
 
-Solver
-Language
-Analyses
-ABAQUS
-Python (abaqus cae noGUI=)
-static, modal, buckling, explicit impact
-ANSYS
-APDL macro
-static, modal, buckling, harmonic
-LS-DYNA
-keyword deck
-explicit impact
-MATLAB
-script
-modal, harmonic, vibroacoustic radiation
+---
 
-Error Doctor
-Paste a message from a .msg, .dat, .log or d3hsp file. Get the actual cause and a ranked list of fixes in the order an experienced analyst would try them. Nineteen curated solver errors across ABAQUS, ANSYS and LS-DYNA.
+## Publish it free on GitHub Pages — about 10 minutes
 
-It returns nothing when it does not recognise an error, rather than inventing a plausible cause.
-Setup Advisor
-Six analysis classes — strength, vibration, impact, buckling, fatigue, acoustics — each with the analysis type, element choice, mesh rule, solver settings, and the specific mistakes that quietly invalidate that class of work.
-Materials module
-Functionally graded plates — power, sigmoid and exponential gradation under Voigt, Mori–Tanaka or Reuss homogenisation, referenced to the physical neutral surface so the bending–stretching coupling vanishes identically. Any of 18 phases in either position, so ceramic–ceramic systems work as well as the conventional ceramic–metal.
-Composite laminates — full ABD matrix from standard notation ([0/±45/90]2s parses), with symmetry, balance and bend–twist diagnostics that tell you when the closed-form frequency no longer applies.
-Sandwich panels — shear-corrected throughout, because classical thin-plate theory overpredicts sandwich stiffness badly. Face yielding, core shear and face wrinkling margins.
-Parametric study — sweep any of eleven design variables, chart the response, export as CSV or a booktabs LaTeX table.
+This gives you **your own permanent URL**, something like
+`https://baijns.github.io/cae-copilot/`. Anyone can open it. No login for
+them, no Claude account, nothing to install. You own it.
 
+### 1. Make a GitHub account
+Go to <https://github.com> and sign up. Free. Choose your username carefully —
+it becomes part of your URL, so `baijns` or `baijnathsingh` rather than
+something you will regret on a business card.
 
-Why a deterministic tool
-Every script comes from a fixed template. Every frequency comes from a published closed-form solution. Where a method does not apply, the tool says so and stops.
+### 2. Create a repository
+Click **+** (top right) → **New repository**.
 
-A general-purpose language model will answer any plate question fluently, and some of the answers will be wrong in ways you cannot detect without doing the calculation yourself — which is what you asked it to do. This tool is built the other way round.
+- **Repository name:** `cae-copilot`
+- **Public** (this is required for free Pages hosting)
+- Tick **Add a README file**
+- Click **Create repository**
 
-The pairing is the point. For any plate you can generate both the FE deck and the analytical solution. Run both. Agreement is evidence. Disagreement is information, usually about your boundary conditions or your units. Every generated script prints the analytical value in its header comment, so the FE run has something to check itself against the moment it finishes.
+### 3. Upload these files
+On the repository page: **Add file** → **Upload files**.
 
+Drag in `index.html`, `copilot.html`, `materials.html` and `.nojekyll`.
 
-Validation
-Frequency parameter λ = ωa²√(ρh/D) for a square isotropic plate, ν = 0.3, against Leissa (1969):
+> If your file manager hides `.nojekyll` because it starts with a dot, don't
+> worry — the site works without it. It only prevents a rare GitHub quirk.
 
-Case
-Computed
-Reference
-Error
-Method
-SSSS
-19.7394
-19.7392
-+0.001%
-Lévy, exact
-SCSS
-23.6462
-23.6463
-−0.000%
-Lévy, exact
-SCSC
-28.9508
-28.9509
-−0.000%
-Lévy, exact
-SSSF
-11.6842
-11.6845
-−0.003%
-Lévy, exact
-SCSF
-12.6870
-12.6874
-−0.003%
-Lévy, exact
-SFSF
-9.6313
-9.6314
-−0.002%
-Lévy, exact
-CCCC
-35.9912
-35.9852
-+0.017%
-Rayleigh–Ritz 5×5
-CCCF
-24.0227
-24.0200
-+0.011%
-Rayleigh–Ritz 5×5
-CFFF
-3.4917
-3.4917
-−0.000%
-Rayleigh–Ritz 5×5
-CCFF
-6.9440
-6.9421
-+0.028%
-Rayleigh–Ritz 5×5
+Scroll down, click **Commit changes**.
 
+### 4. Turn on Pages
+**Settings** (top of the repository) → **Pages** (left sidebar).
 
-Worst error 0.028%. Exact wherever a simply supported pair admits the Lévy solution; Rayleigh–Ritz otherwise, which is a minimum principle and therefore always an upper bound.
+- Under *Source*, choose **Deploy from a branch**
+- Branch: **main**, folder: **/ (root)**
+- Click **Save**
 
-Further checks: the laminate routine reproduces A₁₁ = Eh/(1−ν²) and D₁₁ = Eh³/12(1−ν²) exactly for a single isotropic ply, gives B = 0 and D₁₆ = D₂₆ = 0 for symmetric cross-ply, and returns λ = 19.7392 for an isotropic square plate. The FGM routine returns the exact homogeneous rigidity at n = 0 with the neutral surface at mid-plane to machine precision. Mori–Tanaka is bounded by Voigt above and Reuss below at every volume fraction.
+Wait two or three minutes. Refresh the page and GitHub will show your live URL
+at the top.
 
-The validation/ folder contains every script that produces these numbers, plus VALIDATION.md with the full results and a record of four genuine physics errors that this process caught during development. Run them yourself.
+### 5. Test it properly
+Open the URL **on your phone, on mobile data, not on wifi**. That proves it
+works for someone who is not you and not on your network. If it loads there,
+it loads for everyone.
 
+---
 
-Using it
-Open the live site — or clone this repository and double-click index.html. It runs offline, indefinitely, with no dependencies.
+## After it is live
 
-index.html      landing page
+**Put the URL everywhere.** Your LinkedIn headline and about section, your
+email signature, your university profile page, the last slide of every talk
+you give, and your CV.
 
-copilot.html    Script Builder · Error Doctor · Setup Advisor
+**Updating is easy.** Edit a file, or upload a replacement with the same name.
+GitHub redeploys in about a minute. No rebuild, no pipeline.
 
-materials.html  FGM · laminate · sandwich · parametric study
+**Add a custom domain later if you want one.** `caecopilot.com` or similar
+costs a few hundred rupees a year and points at the same files — Settings →
+Pages → Custom domain. Do this only once people are actually using the tool.
 
-validation/     the scripts that verify every number above
+---
 
+## Get a DOI so the tool is citable
 
-Scope and limits
-State these honestly if you use the tool in published work.
+Once the repository exists, connect it to [Zenodo](https://zenodo.org):
 
-Flat rectangular plates only. No curved shells, stiffened panels or cutouts.
-Thin-plate (Kirchhoff) theory in the analytical solutions. Above roughly h/L = 0.05, shear deformation matters and these overpredict frequencies — use FSDT or the generated FE model instead.
-Rayleigh–Ritz values are upper bounds, converged to ~0.03% at 5×5 for the cases tested, but not exact.
-The laminate frequency formula assumes B = 0 and D₁₆ = D₂₆ = 0. The tool warns when a layup violates that; take the warning seriously.
-Sandwich failure checks are a simply supported strip under uniform pressure — a first sizing pass, not a certification analysis.
-LS-DYNA output covers the control, material, section and boundary cards. Bring your own mesh.
+1. Sign in to Zenodo with your GitHub account
+2. Go to your Zenodo GitHub settings and switch **on** the `cae-copilot` repository
+3. Back on GitHub: **Releases** → **Create a new release** → tag it `v1.0` → **Publish release**
 
+Zenodo mints a DOI for that release automatically. From then on your students
+and co-authors can cite the tool properly:
 
-Citing this
-Cite the methods — Mori–Tanaka homogenisation, the physical neutral surface formulation, classical lamination theory, Lévy's solution, Rayleigh–Ritz with characteristic beam functions, Warburton (1954), Leissa (1969), Elliott & Johnson (1993) for the elemental radiator model. Implementations are checked, not cited.
+> Singh, B. N. (2026). *CAE Copilot: a validated semi-analytical toolkit for
+> graded and layered plate vibroacoustics* (v1.0) [Software]. Zenodo.
+> https://doi.org/10.5281/zenodo.XXXXXXX
 
-If you want to cite the software itself, use the archived release DOI.
+That citation counts. It is a research output with a permanent identifier,
+it goes in your CV and your promotion file, and it makes the tool something
+other groups can build on and reference rather than just use.
 
+---
 
-Contributing
-The physics lives in plainly named functions near the top of each file's <script> block — moriTanaka, fgmStiffness, computeABD, levyFreqs, ritzFreqs, sandwich. Script generators sit below them, so you can add a solver without touching the physics, or add physics without touching the generators. Adding a material is one entry in the arrays at the top.
+## What to add to the repository next
 
-Roadmap, in order of value:
+Copy in the `validation/` folder from your archive. It is the evidence that
+every number the tool produces has been checked against published reference
+values — Leissa (1969) for the boundary conditions, classical plate theory for
+the laminate route, limiting cases for the FGM homogenisation.
 
-Lévy for specially orthotropic laminates — replace the scalar D with D₁₁, D₁₂+2D₆₆, D₂₂ in the ODE. The machinery already exists.
-First-order shear deformation theory for thick FGM plates.
-Fluid loading and added mass for the vibroacoustic module.
-A unit-system toggle (SI-m / SI-mm).
+A tool that ships its own validation suite is in a different category from one
+that does not. That folder is the reason a researcher will trust this enough
+to use it in a paper.
 
-Issues and pull requests welcome. If you find a number that disagrees with a published reference, that is the most valuable thing you can report.
+---
 
-
-Licence
-MIT — see LICENSE. Use it, modify it, teach with it, build on it.
-
+Dr. Baij Nath Singh · Greater Noida

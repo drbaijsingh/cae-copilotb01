@@ -1,0 +1,599 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Run It, Then Prove It</title>
+<meta name="description" content="Free browser tool for structural CAE: generates runnable ABAQUS, ANSYS, LS-DYNA and MATLAB scripts, diagnoses solver errors, and analyses functionally graded, laminated and sandwich plates.">
+<meta name="author" content="Dr. Baij Nath Singh">
+
+<style>
+:root{color-scheme:light dark}
+html,body{margin:0}
+body{font:14px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#fff}
+img{max-width:100%}
+[hidden]{display:none!important}
+.site-nav{font-family:system-ui,sans-serif;font-size:13px;display:flex;gap:14px;align-items:center;margin-left:18px;flex-shrink:0}
+.site-nav a{color:#0A6FB5;text-decoration:none;white-space:nowrap;border-bottom:1px solid transparent;padding-bottom:1px}
+.site-nav a:hover{border-bottom-color:currentColor}
+@media (prefers-color-scheme:dark){.site-nav a{color:#48A6E4}}
+</style>
+</head>
+<body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+
+<style>
+  :root{
+    --ground:#F3F6F8; --surface:#FFFFFF; --surface-2:#EAEFF3; --deep:#0A121A;
+    --ink:#0C141B; --ink-soft:#4E5D6B; --ink-faint:#7A8896;
+    --rule:#D7DFE6; --rule-soft:#E6ECF1;
+    --accent:#0A6FB5; --accent-ink:#FFFFFF; --accent-soft:#E3F0F9;
+    --gold:#B0740F; --gold-soft:#FBF0DC;
+    --on-deep:#DEE8F0; --on-deep-soft:#8FA3B4;
+    --shadow:0 1px 2px rgba(12,20,27,.06), 0 14px 34px -24px rgba(12,20,27,.42);
+    --cond:"Barlow Condensed","Barlow",sans-serif;
+    --ui:"Barlow","Helvetica Neue",Arial,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --ground:#070C11; --surface:#101922; --surface-2:#16212B; --deep:#050A0F;
+      --ink:#E4ECF3; --ink-soft:#93A5B4; --ink-faint:#6F808E;
+      --rule:#233039; --rule-soft:#1A242D;
+      --accent:#4FADEA; --accent-ink:#041826; --accent-soft:#102A3C;
+      --gold:#DFAE5E; --gold-soft:#2A2114;
+      --on-deep:#DEE8F0; --on-deep-soft:#8FA3B4;
+      --shadow:0 1px 2px rgba(0,0,0,.55), 0 16px 40px -28px rgba(0,0,0,1);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#070C11; --surface:#101922; --surface-2:#16212B; --deep:#050A0F;
+    --ink:#E4ECF3; --ink-soft:#93A5B4; --ink-faint:#6F808E;
+    --rule:#233039; --rule-soft:#1A242D;
+    --accent:#4FADEA; --accent-ink:#041826; --accent-soft:#102A3C;
+    --gold:#DFAE5E; --gold-soft:#2A2114;
+    --on-deep:#DEE8F0; --on-deep-soft:#8FA3B4;
+    --shadow:0 1px 2px rgba(0,0,0,.55), 0 16px 40px -28px rgba(0,0,0,1);
+  }
+
+  *{box-sizing:border-box;}
+  body{background:var(--ground);color:var(--ink);font-family:var(--ui);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;}
+  h1,h2,h3,h4{margin:0;text-wrap:balance;}
+  p{margin:0;}
+  a{color:inherit;}
+
+  .wrap{max-width:1120px;margin:0 auto;padding:0 24px;}
+  .narrow{max-width:820px;margin:0 auto;}
+
+  .eyebrow{
+    font-family:var(--mono);font-size:10.5px;font-weight:500;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--accent);
+  }
+
+  /* ---------------- hero ---------------- */
+  .hero{background:var(--deep);color:var(--on-deep);position:relative;overflow:hidden;}
+  .hero::after{
+    content:"";position:absolute;left:0;right:0;bottom:0;height:4px;
+    background:linear-gradient(90deg,#2B3E9E,#0F86C8 22%,#25B08A 44%,#D6C43F 66%,#D9702F 84%,#B32A22);
+  }
+  .hero-inner{
+    max-width:1120px;margin:0 auto;padding:26px 24px 76px;
+    display:grid;grid-template-columns:1.06fr .94fr;gap:48px;align-items:center;
+  }
+  .navrow{
+    grid-column:1/-1;display:flex;align-items:center;gap:12px;
+    padding-bottom:52px;
+  }
+  .mark{width:26px;height:26px;border-radius:5px;
+    background:linear-gradient(150deg,#2B3E9E,#0F86C8 26%,#25B08A 48%,#D6C43F 70%,#D9702F 86%,#B32A22);}
+  .wordmark{font-family:var(--cond);font-weight:700;font-size:21px;letter-spacing:.01em;color:#fff;}
+  .wordmark span{color:#6FC0F3;}
+  .navspace{flex:1;}
+  .navlink{
+    font-size:14px;color:var(--on-deep-soft);text-decoration:none;
+    border-bottom:1px solid transparent;padding-bottom:2px;
+  }
+  .navlink:hover{color:#fff;border-bottom-color:#6FC0F3;}
+
+  .hero h1{
+    font-family:var(--cond);font-weight:700;
+    font-size:clamp(38px,5.4vw,62px);line-height:1.0;letter-spacing:-.012em;color:#fff;
+    margin-bottom:22px;
+  }
+  .hero h1 em{font-style:normal;color:#6FC0F3;}
+  .hero-sub{font-size:clamp(17px,2.1vw,19.5px);color:var(--on-deep-soft);max-width:52ch;margin-bottom:14px;}
+  .hero-sub strong{color:#fff;font-weight:600;}
+  .hero-note{font-family:var(--mono);font-size:12px;color:#7E93A5;margin-bottom:30px;}
+
+  .cta-row{display:flex;flex-wrap:wrap;gap:11px;}
+  .btn{
+    display:inline-block;text-decoration:none;border:1px solid transparent;cursor:pointer;
+    border-radius:6px;padding:13px 22px;font-family:var(--ui);font-weight:600;font-size:15.5px;
+    transition:transform .12s, background .12s, border-color .12s;
+  }
+  .btn:hover{transform:translateY(-1px);}
+  .btn:focus-visible{outline:2px solid #6FC0F3;outline-offset:3px;}
+  .btn-primary{background:#1687D4;color:#fff;}
+  .btn-primary:hover{background:#2C99E3;}
+  .btn-ghost{border-color:rgba(255,255,255,.26);color:#DEE8F0;}
+  .btn-ghost:hover{border-color:#6FC0F3;color:#fff;}
+  .btn-solid{background:var(--accent);color:var(--accent-ink);}
+  .btn-line{border-color:var(--rule);color:var(--ink);background:var(--surface);}
+  .btn-line:hover{border-color:var(--accent);}
+
+  .canvas-hold{position:relative;}
+  canvas{width:100%;height:auto;display:block;}
+  .canvas-cap{
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+    color:#7E93A5;text-align:center;margin-top:10px;
+  }
+
+  /* ---------------- sections ---------------- */
+  section{padding:76px 0;}
+  .sec-head{margin-bottom:38px;}
+  .sec-head .eyebrow{display:block;margin-bottom:12px;}
+  h2{font-family:var(--cond);font-weight:700;font-size:clamp(29px,4vw,42px);line-height:1.06;letter-spacing:-.012em;}
+  .sec-lede{font-size:17.5px;color:var(--ink-soft);max-width:64ch;margin-top:14px;}
+
+  .band{background:var(--surface);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);}
+
+  /* problem strip */
+  .probs{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1px;background:var(--rule-soft);border:1px solid var(--rule-soft);border-radius:10px;overflow:hidden;}
+  .prob{background:var(--ground);padding:26px 24px;}
+  .prob .q{font-family:var(--cond);font-size:21px;font-weight:700;margin-bottom:8px;line-height:1.15;}
+  .prob p{font-size:14.5px;color:var(--ink-soft);line-height:1.55;}
+
+  /* tools */
+  .tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;}
+  .tool{background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:26px 25px;box-shadow:var(--shadow);display:flex;flex-direction:column;}
+  .tool-n{font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:.1em;margin-bottom:12px;}
+  .tool h3{font-family:var(--cond);font-size:24px;font-weight:700;margin-bottom:10px;}
+  .tool p{font-size:14.8px;color:var(--ink-soft);line-height:1.55;margin-bottom:16px;flex:1;}
+  .chiprow{display:flex;flex-wrap:wrap;gap:5px;}
+  .chip{font-family:var(--mono);font-size:10.5px;letter-spacing:.03em;background:var(--surface-2);color:var(--ink-soft);border-radius:3px;padding:4px 8px;}
+
+  /* thesis */
+  .thesis{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--surface);box-shadow:var(--shadow);}
+  .th-half{padding:30px 30px 32px;}
+  .th-half + .th-half{border-left:1px solid var(--rule);}
+  .th-tag{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:12px;display:inline-block;padding:4px 9px;border-radius:3px;}
+  .th-bad{background:var(--gold-soft);color:var(--gold);}
+  .th-good{background:var(--accent-soft);color:var(--accent);}
+  .th-half h3{font-family:var(--cond);font-size:23px;font-weight:700;margin-bottom:11px;line-height:1.2;}
+  .th-half p{font-size:15px;color:var(--ink-soft);line-height:1.6;}
+  .th-half p + p{margin-top:12px;}
+  .th-half code{font-family:var(--mono);font-size:12.5px;background:var(--surface-2);padding:2px 6px;border-radius:3px;color:var(--ink);}
+
+  .receipt{
+    margin-top:26px;background:var(--deep);color:var(--on-deep);border-radius:10px;padding:26px 28px;
+    font-family:var(--mono);font-size:13px;line-height:1.9;overflow-x:auto;
+  }
+  .receipt .rl{color:#7E93A5;}
+  .receipt .ok{color:#5FD39A;}
+  .receipt .no{color:#F08A7E;}
+  .receipt b{color:#fff;font-weight:500;}
+
+  /* offer */
+  .offers{display:grid;grid-template-columns:1.15fr .85fr;gap:20px;}
+  .offer{background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:30px 30px 32px;box-shadow:var(--shadow);}
+  .offer.featured{border-color:var(--accent);border-width:2px;}
+  .offer h3{font-family:var(--cond);font-size:27px;font-weight:700;margin-bottom:6px;}
+  .offer .who{font-size:14px;color:var(--ink-faint);margin-bottom:20px;}
+  .price{display:flex;align-items:baseline;gap:10px;margin-bottom:6px;flex-wrap:wrap;}
+  .price .amt{font-family:var(--cond);font-size:40px;font-weight:700;letter-spacing:-.02em;line-height:1;}
+  .price .was{font-size:16px;color:var(--ink-faint);text-decoration:line-through;}
+  .price .per{font-size:14px;color:var(--ink-soft);}
+  .seats{font-family:var(--mono);font-size:11.5px;color:var(--gold);margin-bottom:20px;letter-spacing:.02em;}
+  ul.feat{list-style:none;padding:0;margin:0 0 24px;display:flex;flex-direction:column;gap:10px;}
+  ul.feat li{display:grid;grid-template-columns:16px 1fr;gap:10px;font-size:14.8px;line-height:1.5;align-items:start;}
+  ul.feat li::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent);margin-top:8px;}
+  ul.feat li.dim{color:var(--ink-soft);}
+
+  .rate-list{display:flex;flex-direction:column;gap:0;margin-bottom:24px;}
+  .rate{display:flex;justify-content:space-between;gap:14px;padding:10px 0;border-bottom:1px solid var(--rule-soft);font-size:14.5px;}
+  .rate:last-child{border-bottom:0;}
+  .rate span:last-child{font-family:var(--mono);font-size:13px;color:var(--ink-soft);white-space:nowrap;}
+
+  /* bio */
+  .bio{display:grid;grid-template-columns:1fr 1fr;gap:38px;align-items:start;}
+  .bio p{font-size:16px;color:var(--ink-soft);line-height:1.65;}
+  .bio p + p{margin-top:15px;}
+  .bio strong{color:var(--ink);font-weight:600;}
+  .creds{display:flex;flex-direction:column;gap:0;border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--surface);}
+  .cred{display:grid;grid-template-columns:96px 1fr;gap:16px;padding:14px 20px;border-bottom:1px solid var(--rule-soft);font-size:14.5px;align-items:baseline;}
+  .cred:last-child{border-bottom:0;}
+  .cred-k{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);}
+
+  /* faq */
+  .faq{display:flex;flex-direction:column;gap:0;border-top:1px solid var(--rule);}
+  details{border-bottom:1px solid var(--rule);}
+  summary{
+    cursor:pointer;padding:19px 0;font-family:var(--cond);font-size:20px;font-weight:600;
+    list-style:none;display:flex;justify-content:space-between;gap:16px;align-items:center;
+  }
+  summary::-webkit-details-marker{display:none;}
+  summary::after{content:"+";font-family:var(--mono);font-size:19px;color:var(--accent);flex-shrink:0;}
+  details[open] summary::after{content:"\2212";}
+  summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px;}
+  details p{padding:0 0 20px;font-size:15.5px;color:var(--ink-soft);max-width:74ch;line-height:1.62;}
+
+  /* final cta */
+  .final{background:var(--deep);color:var(--on-deep);text-align:center;padding:76px 24px;}
+  .final h2{color:#fff;margin-bottom:16px;}
+  .final p{color:var(--on-deep-soft);font-size:17.5px;max-width:56ch;margin:0 auto 28px;}
+  .final .cta-row{justify-content:center;}
+  .contact{margin-top:32px;font-family:var(--mono);font-size:13px;color:#7E93A5;line-height:2;}
+  .contact a{color:#6FC0F3;text-decoration:none;}
+  .contact a:hover{text-decoration:underline;}
+
+  footer{padding:26px 24px 44px;text-align:center;font-size:12.5px;color:var(--ink-faint);}
+
+  @media (max-width:900px){
+    .hero-inner{grid-template-columns:1fr;gap:34px;padding-bottom:56px;}
+    .navrow{padding-bottom:34px;}
+    .thesis,.offers,.bio{grid-template-columns:1fr;}
+    .th-half + .th-half{border-left:0;border-top:1px solid var(--rule);}
+    section{padding:56px 0;}
+  }
+  @media (max-width:520px){
+    .navlink{display:none;}
+    .btn{width:100%;text-align:center;}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none !important;}}
+</style>
+
+<header class="hero">
+  <div class="hero-inner">
+
+    <nav class="navrow">
+      <div class="mark" aria-hidden="true"></div>
+      <div class="wordmark">CAE <span>Copilot</span></div>
+      <div class="navspace"></div>
+      <a class="navlink" href="#tools">What it does</a>
+      <a class="navlink" href="#cohort">Training</a>
+      <a class="navlink" href="#consult">Consulting</a>
+      <a class="navlink" href="copilot.html">Open the tool</a>
+    </nav>
+
+    <div>
+      <h1>Your solver ran.<br>That doesn't mean<br><em>it's right.</em></h1>
+      <p class="hero-sub">CAE Copilot generates the FE deck <strong>and</strong> the analytical solution for the same problem, so you can check one against the other before you put your name on the result.</p>
+      <p class="hero-note">ABAQUS · ANSYS · LS-DYNA · MATLAB — free, no sign-up</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="copilot.html">Open the tool — free</a>
+        <a class="btn btn-ghost" href="#cohort">Join the next cohort</a>
+      </div>
+    </div>
+
+    <div class="canvas-hold">
+      <canvas id="plate" width="960" height="720" role="img"
+        aria-label="Animated contour plot of a vibrating plate mode shape"></canvas>
+      <p class="canvas-cap">Mode (2,1) — simply supported plate</p>
+    </div>
+
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head narrow" style="text-align:center;">
+      <span class="eyebrow">The daily reality</span>
+      <h2>Three hours of your day, every day</h2>
+      <p class="sec-lede" style="margin-inline:auto;">Nobody struggles with the physics. They struggle with the eight hundred lines of syntax between them and the physics.</p>
+    </div>
+    <div class="probs">
+      <div class="prob">
+        <div class="q">"What's the keyword for this again?"</div>
+        <p>You know exactly what analysis you need. You spend forty minutes in the documentation finding out how to ask for it, then another twenty because you got one flag wrong.</p>
+      </div>
+      <div class="prob">
+        <div class="q">"Too many attempts made for this increment"</div>
+        <p>Eleven words that tell you nothing. The real cause is a node you can't see, in a file you haven't opened, three thousand lines down.</p>
+      </div>
+      <div class="prob">
+        <div class="q">"It converged, so it's fine."</div>
+        <p>The most expensive sentence in engineering. A converged answer is not a correct one, and nothing in your solver will ever tell you the difference.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="tools">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">What it does</span>
+      <h2>Three tools, no sign-up, nothing to install</h2>
+      <p class="sec-lede">It runs in your browser. Your parameters never leave your machine, which matters when the geometry belongs to a client.</p>
+    </div>
+    <div class="tools">
+
+      <div class="tool">
+        <div class="tool-n">01</div>
+        <h3>Script Builder</h3>
+        <p>Set the geometry, material, boundary conditions and mesh once. Get a commented, runnable script for whichever solver you're using — and a second one for the solver you want to cross-check against.</p>
+        <div class="chiprow">
+          <span class="chip">Static</span><span class="chip">Modal</span><span class="chip">Buckling</span>
+          <span class="chip">Harmonic</span><span class="chip">Impact</span><span class="chip">Vibroacoustic</span>
+        </div>
+      </div>
+
+      <div class="tool">
+        <div class="tool-n">02</div>
+        <h3>Error Doctor</h3>
+        <p>Paste the message from your <code>.msg</code>, <code>.dat</code> or <code>d3hsp</code> file. Get the actual cause and a ranked list of fixes in the order an experienced analyst would try them — starting with the check that eliminates half the possibilities.</p>
+        <div class="chiprow">
+          <span class="chip">19 solver errors</span><span class="chip">Ranked fixes</span><span class="chip">No invented causes</span>
+        </div>
+      </div>
+
+      <div class="tool">
+        <div class="tool-n">03</div>
+        <h3>Setup Advisor</h3>
+        <p>Pick what you're trying to find out. Get the analysis type, element choice, mesh rule and solver settings — plus the specific mistakes that quietly invalidate that class of analysis.</p>
+        <div class="chiprow">
+          <span class="chip">Strength</span><span class="chip">Vibration</span><span class="chip">Crash</span>
+          <span class="chip">Buckling</span><span class="chip">Fatigue</span><span class="chip">Acoustics</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Why it's built this way</span>
+      <h2>It would rather say nothing than say something wrong</h2>
+    </div>
+
+    <div class="thesis">
+      <div class="th-half">
+        <span class="th-tag th-bad">A chatbot</span>
+        <h3>Fluent, confident, occasionally fictional</h3>
+        <p>Ask a general-purpose AI for a cantilever plate's natural frequency and it will give you a number, a formula and a paragraph of reasoning. Sometimes the number is right.</p>
+        <p>You cannot tell which times those are without doing the calculation yourself — which is what you asked it to do.</p>
+      </div>
+      <div class="th-half">
+        <span class="th-tag th-good">CAE Copilot</span>
+        <h3>Templates and closed-form solutions</h3>
+        <p>Every script comes from a fixed template. Every frequency comes from a published closed-form solution — Navier for simply supported plates, <code>Warburton (1954)</code> otherwise.</p>
+        <p>Where the method doesn't apply, it says so and stops. The Error Doctor returns nothing rather than guessing at a cause it doesn't recognise.</p>
+      </div>
+    </div>
+
+    <div class="receipt">
+      <div class="rl">$ validate --square-plate --against-literature</div>
+      <div>&nbsp;</div>
+      <div><span class="rl">SSSS</span>  <b>19.739</b>  ref 19.739   <span class="ok">exact</span></div>
+      <div><span class="rl">CCCC</span>  <b>36.133</b>  ref 35.990   <span class="ok">+0.40 %</span></div>
+      <div><span class="rl">CFFF</span>  <b>3.518</b>   ref 3.492    <span class="ok">+0.73 %</span></div>
+      <div><span class="rl">SFSF</span>  <b>9.870</b>   ref 9.870    <span class="ok">exact</span></div>
+      <div>&nbsp;</div>
+      <div class="rl">radiation efficiency, rigid piston, high ka ....... <span class="ok">sigma -&gt; 1.00</span></div>
+      <div class="rl">radiator grid coarser than acoustic wavelength ... <span class="no">caught, refines automatically</span></div>
+    </div>
+    <p style="font-size:14px;color:var(--ink-faint);margin-top:14px;max-width:74ch;">
+      Frequency parameter &lambda; = &omega;a²&radic;(&rho;h/D) for a square plate, checked against standard references. These numbers are why the tool is worth trusting — and they are printed here so you can check them yourself.
+    </p>
+  </div>
+</section>
+
+<section class="band" id="cohort">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Learn it properly</span>
+      <h2>The tool is free. Knowing what to do with it isn't.</h2>
+      <p class="sec-lede">A generator gets you a running deck. It does not get you a job, or the judgement to know when a result is wrong. That takes someone who has done it a thousand times sitting next to you while you do it.</p>
+    </div>
+
+    <div class="offers">
+
+      <div class="offer featured">
+        <h3>Industrial CAE — live cohort</h3>
+        <p class="who">Six weekends, online, small group. For final-year and M.Tech students, and working engineers moving into simulation roles.</p>
+        <div class="price">
+          <span class="amt">₹7,999</span>
+          <span class="was">₹11,999</span>
+          <span class="per">per seat · early bird</span>
+        </div>
+        <p class="seats">25 seats per cohort · next batch forming now</p>
+        <ul class="feat">
+          <li>Modal, harmonic and NVH analysis in ANSYS and ABAQUS, from first principles to a defensible report</li>
+          <li>Every FE result cross-checked against the analytical solution — the habit that separates an analyst from an operator</li>
+          <li>Mesh convergence, unit discipline and the error patterns that waste most people's first two years</li>
+          <li>Live sessions with recordings, plus your questions answered between them</li>
+          <li>A finished, portfolio-ready analysis project you can put in front of an interviewer</li>
+          <li class="dim">Certificate of completion</li>
+        </ul>
+        <a class="btn btn-solid" href="#enquire">Ask about the next batch</a>
+      </div>
+
+      <div class="offer" id="consult">
+        <h3>Analysis, done for you</h3>
+        <p class="who">For manufacturers and design teams who need a validated result and a report someone will sign.</p>
+        <div class="rate-list">
+          <div class="rate"><span>Linear static + report</span><span>from ₹25,000</span></div>
+          <div class="rate"><span>Modal / NVH study</span><span>from ₹75,000</span></div>
+          <div class="rate"><span>Fatigue &amp; durability</span><span>from ₹60,000</span></div>
+          <div class="rate"><span>Explicit crash / impact</span><span>from ₹1,50,000</span></div>
+          <div class="rate"><span>ASME / AISC code compliance</span><span>from ₹50,000</span></div>
+          <div class="rate"><span>In-house team workshop</span><span>per day</span></div>
+        </div>
+        <p style="font-size:14.5px;color:var(--ink-soft);margin-bottom:22px;line-height:1.6;">
+          Fixed price, agreed before the work starts. You get the model, the validated result, and a report written to be read by a quality department rather than another analyst.
+        </p>
+        <a class="btn btn-line" href="#enquire">Discuss a project</a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Who is behind this</span>
+      <h2>Thirteen years of getting these answers right</h2>
+    </div>
+    <div class="bio">
+      <div>
+        <p><strong>Dr. Baij Nath Singh</strong> is a mechanical engineer specialising in structural CAE, vibroacoustics and NVH. He holds a PhD from IIT (ISM) Dhanbad and teaches at Bennett University, Greater Noida.</p>
+        <p>Before academia he ran structural analysis on nuclear fuel cask transfer systems for AREVA TN, and led CAE and new product development at an automotive manufacturer. He has worked on composite bolted joints at National Aerospace Laboratories and vibration control for ship superstructures at IIT Kanpur.</p>
+        <p>He has solved <strong>over a thousand industrial problems</strong> in ABAQUS and published six SCI papers on the vibroacoustic response of functionally graded and composite plates. The closed-form solutions inside this tool come from that work.</p>
+      </div>
+      <div class="creds">
+        <div class="cred"><span class="cred-k">Doctorate</span><span>PhD Mechanical Engineering — Vibroacoustics, IIT (ISM) Dhanbad</span></div>
+        <div class="cred"><span class="cred-k">Teaching</span><span>Assistant Professor, Bennett University, since 2017</span></div>
+        <div class="cred"><span class="cred-k">Nuclear</span><span>Structural analyst, AREVA TN fuel cask systems</span></div>
+        <div class="cred"><span class="cred-k">Automotive</span><span>CAE analyst and NPD manager, AMP Motors</span></div>
+        <div class="cred"><span class="cred-k">Aerospace</span><span>Composite joints, National Aerospace Laboratories</span></div>
+        <div class="cred"><span class="cred-k">Software</span><span>ABAQUS · ANSYS · LS-DYNA · HyperWorks · CATIA · MATLAB · Python</span></div>
+        <div class="cred"><span class="cred-k">Research</span><span>6 SCI/SCIE journal papers, 8 conference papers</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap narrow">
+    <div class="sec-head" style="margin-bottom:20px;">
+      <span class="eyebrow">Before you ask</span>
+      <h2>Reasonable questions</h2>
+    </div>
+    <div class="faq">
+      <details>
+        <summary>Is the tool really free?</summary>
+        <p>Yes, and there is no sign-up. It runs entirely in your browser — nothing you type is sent anywhere. The paid things are the cohort and the consulting, because those are the parts that need my hours.</p>
+      </details>
+      <details>
+        <summary>Can I trust a script I didn't write?</summary>
+        <p>Not blindly, and the tool says so on every screen. Every script is commented so you can read what it does before you run it, and the analytical cross-check exists precisely so you have an independent number to compare against. Treat it as a fast, careful first draft from someone who has written this deck many times — not as an answer.</p>
+      </details>
+      <details>
+        <summary>What can't it do yet?</summary>
+        <p>Flat rectangular plates only. No composites, laminates or functionally graded materials yet — those are next, and they are the area I publish in. LS-DYNA gets you the control, material and boundary cards but you bring your own mesh. Downloads arrive as <code>.txt</code>, so rename them.</p>
+      </details>
+      <details>
+        <summary>I'm a student. Is the cohort worth it over free tutorials?</summary>
+        <p>If your goal is to see which buttons to click, YouTube is free and adequate. If your goal is to be hired as an analyst, the gap is judgement — knowing that a converged run can still be wrong, why your mesh isn't converged, and how to defend a number to someone senior. That is what six weekends with feedback buys, and it is not on YouTube.</p>
+      </details>
+      <details>
+        <summary>Do you take small jobs?</summary>
+        <p>Yes. A single component check is a normal piece of work and is priced accordingly. If a job is too small to be worth quoting, I will tell you and usually point you at the way to do it yourself.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="final" id="enquire">
+  <h2>Try the tool first</h2>
+  <p>It's free and takes about a minute. If it saves you an afternoon, the cohort will save you a year.</p>
+  <div class="cta-row">
+    <a class="btn btn-primary" href="copilot.html">Open CAE Copilot</a>
+    <a class="btn btn-ghost" href="mailto:singhbaij03@gmail.com?subject=CAE%20Copilot%20-%20cohort%20enquiry&amp;body=Hello%20Dr.%20Singh%2C%0A%0AI'd%20like%20to%20know%20more%20about%3A%0A%20%20%5B%20%5D%20the%20live%20cohort%0A%20%20%5B%20%5D%20a%20consulting%20project%0A%0AA%20little%20about%20me%3A%0A">Email about the cohort</a>
+  </div>
+  <div class="contact">
+    <a href="mailto:singhbaij03@gmail.com">singhbaij03@gmail.com</a><br>
+    <a href="https://linkedin.com/in/baijns" target="_blank" rel="noopener">linkedin.com/in/baijns</a><br>
+    Greater Noida, Uttar Pradesh
+  </div>
+</section>
+
+<footer>
+  CAE Copilot — an independent tool by Dr. Baij Nath Singh. Not affiliated with Dassault Syst&egrave;mes, ANSYS Inc., Ansys LST or MathWorks.
+</footer>
+
+<script>
+(function(){
+"use strict";
+var cv = document.getElementById("plate");
+if(!cv || !cv.getContext) return;
+var ctx = cv.getContext("2d");
+var W = cv.width, H = cv.height;
+
+// FEA-style contour ramp
+var STOPS = [
+  [0.00, 43, 62,158],
+  [0.22, 15,134,200],
+  [0.44, 37,176,138],
+  [0.66,214,196, 63],
+  [0.84,217,112, 47],
+  [1.00,179, 42, 34]
+];
+function ramp(t){
+  t = t<0?0:(t>1?1:t);
+  for(var i=0;i<STOPS.length-1;i++){
+    var A=STOPS[i], B=STOPS[i+1];
+    if(t>=A[0] && t<=B[0]){
+      var f=(t-A[0])/(B[0]-A[0]);
+      return "rgb("+Math.round(A[1]+f*(B[1]-A[1]))+","+
+                    Math.round(A[2]+f*(B[2]-A[2]))+","+
+                    Math.round(A[3]+f*(B[3]-A[3]))+")";
+    }
+  }
+  return "rgb(179,42,34)";
+}
+
+var N = 34;                      // grid divisions
+var SX = 12.4, SY = 6.3, ZS = 108;  // isometric scale
+var CX = W*0.5, CY = H*0.47;
+
+function surf(u,v,phase){
+  // mode (2,1) of a simply supported plate
+  return Math.sin(2*Math.PI*u)*Math.sin(Math.PI*v)*Math.cos(phase);
+}
+function project(i,j,z){
+  var u=i-N/2, v=j-N/2;
+  return [CX + (u-v)*SX, CY + (u+v)*SY - z*ZS];
+}
+
+function draw(phase){
+  ctx.clearRect(0,0,W,H);
+  // painter's algorithm: draw far quads (small i+j) first
+  var cells=[];
+  for(var i=0;i<N;i++) for(var j=0;j<N;j++) cells.push([i,j]);
+  cells.sort(function(a,b){ return (a[0]+a[1])-(b[0]+b[1]); });
+
+  for(var c=0;c<cells.length;c++){
+    var i=cells[c][0], j=cells[c][1];
+    var zs=[], ps=[];
+    var corners=[[i,j],[i+1,j],[i+1,j+1],[i,j+1]];
+    for(var k=0;k<4;k++){
+      var ci=corners[k][0], cj=corners[k][1];
+      var z=surf(ci/N, cj/N, phase);
+      zs.push(z);
+      ps.push(project(ci,cj,z));
+    }
+    var zm=(zs[0]+zs[1]+zs[2]+zs[3])/4;
+    ctx.beginPath();
+    ctx.moveTo(ps[0][0],ps[0][1]);
+    for(var k2=1;k2<4;k2++) ctx.lineTo(ps[k2][0],ps[k2][1]);
+    ctx.closePath();
+    ctx.fillStyle = ramp((zm+1)/2);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(5,10,15,0.20)";
+    ctx.lineWidth = 0.6;
+    ctx.stroke();
+  }
+}
+
+var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+if(reduced){
+  draw(0.55);
+} else {
+  var t0 = null;
+  function frame(ts){
+    if(t0===null) t0=ts;
+    var phase = ((ts-t0)/2600) * Math.PI*2;
+    draw(phase);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+})();
+</script>
+</body>
+</html>
